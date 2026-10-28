@@ -4,6 +4,10 @@
 
 **Created**: 2026-10-28
 
+**Superseded (2026-10-28)**: the suggestions (user story 4, FR-010 to FR-016) were removed from the tool; "Logo without background" (FR-004, FR-008 in part) was removed by feature 007.
+
+**Earlier note**: "Logo without background" (FR-004, FR-008 in part) was removed, the suggestions became a gallery of presets and moved below the icon cards.
+
 **Status**: Implemented (written after the code; see "How this spec was made")
 
 **Input**: User description: "Everything done after the image editor must be a specification: the one-click actions on the icon cards (make the background transparent, logo without background, make the outline shape white), the colour to try on the outline icon, the suggested complete designs, and the notice about the version in the Save step."

@@ -6,7 +6,7 @@
 
 import { removeBackground, solid } from './ops';
 import { defaultOp, hasFlatBorder } from './pipeline';
-import { hasAlpha, type Picture, type RemoveBgOp, type Rgb } from './types';
+import { hasAlpha, type Picture, type RemoveBgOp } from './types';
 
 /** Said when the shape of the outline icon is white already: not a fault. */
 export const ALREADY_WHITE = 'The shape is already white, which is what the outline icon asks for.';
@@ -37,13 +37,4 @@ export function makeTransparent(p: Picture): TransparentResult {
     }
     const op = defaultOp('removeBg', p, 192) as RemoveBgOp;
     return { ok: true, picture: removeBackground(p, op) };
-}
-
-/**
- * The logo alone, in one colour, on nothing: the flat background is taken away (when the picture still has one)
- * and every visible pixel takes `colour`. A picture that is already see-through only gets the colour.
- */
-export function borderlessIcon(p: Picture, colour: Rgb): TransparentResult {
-    const base = hasAlpha(p) && !hasFlatBorder(p) ? { ok: true as const, picture: p } : makeTransparent(p);
-    return base.ok ? { ok: true, picture: solid(base.picture, colour) } : base;
 }

@@ -8,6 +8,7 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 
 ### Added
 
+- **Look page**: a band at the top of the Look step shows the icons as opened (Original) above the icons as they will be saved (Now), colour icon on its accent colour and outline icon on a light and a dark bar, with Changed or Unchanged for each, and it stays in view while you scroll and edit. The buttons of the icon cards are in labelled rows (Image, Quick fix) so they line up.
 - **Drop zone**: the empty first step is a large dashed zone with an upload icon, "Drop the package here" and the Open package button. It lights up while a file is dragged over it and says whether the package will be opened or replaced; a file that is not a .zip, or several files at once, are refused with a clear message, and a file dropped elsewhere on the page no longer makes the window navigate to it.
 - Load the Teams app package of a Copilot Studio agent (zip) and see everything it declares: names,
   descriptions, version, schema version, developer, accent colour, identifiers, icons, permissions
@@ -52,20 +53,22 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
   Studio fills them for the agent and changing them could break it.
 - **Make background transparent**: one button on the colour icon card takes the flat colour behind the logo away,
   so that the accent colour shows through; it says why when there is nothing to take away. Revert undoes it.
-- **Logo without background**: pick a colour on the colour icon card and one click takes the background away,
-  gives the logo that colour and makes the accent colour white, so that the agent shows the logo alone. The
-  outline icon keeps the colour Teams gives it.
 - **Make the shape white** on the outline icon card, and a note that says what the outline icon is: the icon of
   the left bar of Teams, drawn as a shape with no background in the colour of the bar.
-- **Suggestions** in the Look step: the tool works out complete designs from your logo (a white logo on your brand
-  colour, the coloured logo on white, and the one that keeps your colours), each with the colour icon, the accent colour
-  and the outline icon together, the contrast, and the guidance it follows. One button uses a design.
 - A **Preview colour** on the outline icon card shows the shape on the Teams bar in any colour; it is not saved,
   because Teams chooses the colour of that icon.
 - **How to fix it**: every check that does not pass says how to fix it, naming the control, with a button that goes to
   Details or to Look (specification 005).
 - The tool works on a **file** and touches no environment: it uses no connection, no Dataverse and no Power Platform
   API, and a test fails if any source names one, calls the network or writes.
+
+### Changed
+
+- **Look page**: *Logo without background* is gone. *Make background transparent* stays.
+
+### Removed
+
+- **Suggestions** in the Look step (the three designs of the first version and the gallery of palette presets that replaced them). A package built from a suggestion showed a blank icon in the Microsoft 365 admin center, so the feature was taken out together with its code, its tests and its styles.
 
 ### Notes
 

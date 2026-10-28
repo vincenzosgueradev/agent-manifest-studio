@@ -34,7 +34,7 @@ describe('the editor cards', () => {
         expect(labels).toEqual(['Package', 'Details', 'Look', 'Preview', 'Checks', 'Save']);
         const titles = (root: string) => [...document.querySelectorAll(`#${root} > .panel:not([hidden]) .card-title`)].map(h => h.textContent);
         expect(titles('edit-groups')).toEqual(['Identity', 'Descriptions', 'Developer', 'Version']);
-        expect(titles('look-groups')).toEqual(['Suggestions', 'Look', 'Colour icon', 'Outline icon']);
+        expect(titles('look-groups')).toEqual(['Look', 'Colour icon', 'Outline icon']);
         // the accent colour is not among the text fields, nor the icons
         expect(document.querySelector('#edit-groups #ed-accentColor')).toBeNull();
         expect(document.querySelector('#look-groups #ed-accentColor')).not.toBeNull();
@@ -465,52 +465,6 @@ describe('the outline icon as the left bar of Teams draws it', () => {
         expect($('ed-img-msg-outline').textContent).toContain('already white');
         expect($('ed-img-msg-outline').classList.contains('is-info')).toBe(true);
         expect($('ed-img-outline').getAttribute('data-changed')).toBe('false');
-    });
-});
-
-describe('the logo alone, in a colour, on nothing', () => {
-    const flat = (): Uint8Array => encodePng({ width: 192, height: 192, colorType: 6, pixel: (x, y) => (x >= 66 && x < 126 && y >= 66 && y < 126 ? [255, 255, 255, 255] : [7, 104, 125, 255]) });
-    const choose = async (ui: Awaited<ReturnType<typeof loaded>>, colour: string) => {
-        const input = $('ed-img-logo-colour') as HTMLInputElement;
-        input.value = colour;
-        await ui.click('ed-img-borderless-color');
-    };
-
-    it('takes the background away, colours the logo, makes the accent colour white', async () => {
-        const ui = await loaded({ color: flat() });
-        await choose(ui, '#e03030');
-        expect(field('accentColor').value).toBe('#FFFFFF');
-        expect($('ed-img-color').getAttribute('data-changed')).toBe('true');
-        await ui.click('export-btn');
-        const files = unzipSync(ui.fakes.saved[0]!.bytes);
-        const r = O.readPng(files['color.png']!);
-        expect(r.data[3]).toBe(0);                                                       // no background
-        expect(Array.from(r.data.slice((96 * 192 + 96) * 4, (96 * 192 + 96) * 4 + 4))).toEqual([224, 48, 48, 255]);   // the logo, in the colour chosen
-        expect(JSON.parse(new TextDecoder().decode(files['manifest.json']!)).accentColor).toBe('#FFFFFF');
-    });
-
-    it('works on an icon that is already see-through: it only gives the colour', async () => {
-        const ui = await loaded();
-        await choose(ui, '#00aa55');
-        const glyph = (96 * 192 + 96) * 4;
-        await ui.click('export-btn');
-        const r = O.readPng(unzipSync(ui.fakes.saved[0]!.bytes)['color.png']!);
-        expect(Array.from(r.data.slice(glyph, glyph + 3))).toEqual([0, 170, 85]);
-        expect(r.data[3]).toBe(0);
-    });
-
-    it('says why when the edges are not one flat colour', async () => {
-        const gradient = encodePng({ width: 192, height: 192, colorType: 6, pixel: (x, y) => [x, y, 100, 255] });
-        const ui = await loaded({ color: gradient });
-        await choose(ui, '#e03030');
-        expect($('ed-img-msg-color').textContent).toContain('no flat colour along the edges');
-        expect(field('accentColor').value).toBe('#07687d');   // nothing changed
-    });
-
-    it('is not offered on the outline icon, whose colour Teams chooses', async () => {
-        await loaded();
-        expect(document.getElementById('ed-img-logo-colour')).not.toBeNull();
-        expect(document.querySelectorAll('#ed-img-outline #ed-img-logo-colour')).toHaveLength(0);
     });
 });
 

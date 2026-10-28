@@ -9,11 +9,10 @@ import { readPackage } from './services/zip';
 import { exportPackage, makeContext, planEdits, suggestFileName, type EditContext, type Plan } from './services/export';
 import { EMPTY, originalOf, type Edits } from './services/edit/edits';
 import { checkNewIcon } from './services/edit/iconEdit';
-import { borderlessIcon, makeTransparent, whiteShape } from './services/image/transparent';
-import { fromHex } from './services/image/colour';
+import { makeTransparent, whiteShape } from './services/image/transparent';
 import { acceptResult } from './services/image/accept';
 import { decodePng } from './services/png';
-import { recommend, type Suggestion, type SuggestionSet } from './services/image/recommend';
+import { renderCompare, resetCompare } from './view/compare';
 import { bumpVersion } from './services/edit/fields';
 import type { FieldPath, IconSlot } from './services/edit/fields';
 import { buildReport, reportFileName, reportText } from './services/report';
@@ -46,19 +45,6 @@ interface State {
 
 /** The slot whose image editor is open, if any (the editor itself holds its work). */
 let imageEditorSlot: IconSlot | null = null;
-
-/** The advice for the colour icon: worked out again only when the icon or the accent colour is another. */
-let advice: { bytes: Uint8Array | null; accent: string | null; set: SuggestionSet } | null = null;
-
-function adviceFor(bytes: Uint8Array | null, accent: string | null): SuggestionSet {
-    if (advice && advice.bytes === bytes && advice.accent === accent) return advice.set;
-    const png = bytes ? decodePng(bytes) : null;
-    const set: SuggestionSet = png && png.kind === 'ok'
-        ? recommend({ width: png.header.width, height: png.header.height, data: png.rgba }, accent)
-        : { suggestions: [], note: null };
-    advice = { bytes, accent, set };
-    return set;
-}
 
 let state: State | null = null;
 /** The step on screen, 1 to 5. */
@@ -119,6 +105,7 @@ function clearViews(): void {
     for (const id of ['summary', 'preview-body', 'preview-notice', 'name-body', 'edit-groups', 'look-groups', 'checks-body', 'changes-body', 'contents-body', 'export-body']) {
         $(id).replaceChildren();
     }
+    resetCompare($('look-compare'));
     $('checks-summary').textContent = '';
     $('report-status').hidden = true;
     $('report-status').textContent = '';
@@ -151,7 +138,11 @@ function render(): void {
     });
     renderEditor($('edit-groups'), {
         original: ctx.manifest, shown, edits: state.edits, originalIcons: ctx.icons, iconMessage: state.iconMessage, imageEditorSlot,
-        suggestions: adviceFor(shown.manifest.icons.color === null ? null : (shown.entries[shown.manifest.icons.color] ?? ctx.pkg.entries.find(e => e.path === shown.manifest.icons.color && !e.isDirectory)?.data ?? null), shown.manifest.accentColor),
+    });
+    renderCompare($('look-compare'), {
+        originalIcons: ctx.icons, originalAccent: ctx.manifest.accentColor,
+        nowIcons: shown.icons, nowAccent: m.accentColor,
+        replaced: shown.iconChanges.map(c => c.slot),
     });
     renderChecks($('checks-body'), $('checks-summary'), shown.checks);
     const reportStatus = $('report-status');
@@ -358,21 +349,6 @@ initEditor({
             .catch(e => { if (state) { state.iconMessage = { ...state.iconMessage, [slot]: `The file could not be read: ${e instanceof Error ? e.message : String(e)}` }; render(); } });
     },
     onIconEdit: (slot, preset) => imageEditor.open(slot, preset),
-    onApplySuggestion: (id: Suggestion['id']) => {
-        if (!state || !advice) return;
-        const s = advice.set.suggestions.find(x => x.id === id);
-        if (!s) return;
-        const colour = acceptResult(s.icon, 192);
-        const outline = acceptResult(s.outline, 32);
-        if (!colour.ok || !outline.ok) {
-            const message = !colour.ok ? colour.message : (outline as { message: string }).message;
-            state.iconMessage = { ...state.iconMessage, color: message };
-            render();
-            return;
-        }
-        state.iconMessage = { color: null, outline: null };
-        edit(e => ({ ...e, icons: { ...e.icons, color: colour.bytes, outline: outline.ok ? outline.bytes : e.icons.outline }, fields: { ...e.fields, accentColor: s.accent } }));
-    },
     onIconWhite: () => {
         if (!state) return;
         const bytes = iconBytes('outline');
@@ -384,21 +360,6 @@ initEditor({
         const out = acceptResult(made.picture, png.header.width);
         if (!out.ok) { fail(out.message); return; }
         acceptIcon('outline', out.bytes);
-    },
-    onIconBorderless: hex => {
-        if (!state) return;
-        const bytes = iconBytes('color');
-        const png = bytes ? decodePng(bytes) : null;
-        const colour = fromHex(hex);
-        const fail = (message: string): void => { state!.iconMessage = { ...state!.iconMessage, color: message }; render(); };
-        if (!png || png.kind !== 'ok') { fail('The colour icon cannot be read as a picture.'); return; }
-        if (!colour) { fail('That is not a colour.'); return; }
-        const made = borderlessIcon({ width: png.header.width, height: png.header.height, data: png.rgba }, colour);
-        if (!made.ok) { fail(made.message); return; }
-        const out = acceptResult(made.picture, png.header.width);
-        if (!out.ok) { fail(out.message); return; }
-        state.iconMessage = { ...state.iconMessage, color: null };
-        edit(e => ({ ...e, icons: { ...e.icons, color: out.bytes }, fields: { ...e.fields, accentColor: '#FFFFFF' } }));
     },
     onIconTransparent: slot => {
         if (!state) return;

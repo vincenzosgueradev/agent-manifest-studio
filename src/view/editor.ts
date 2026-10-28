@@ -16,8 +16,7 @@ import { originalOf, type Edits, type Original } from '../services/edit/edits';
 import { SLOT_LABEL, SLOT_SIDE } from '../services/edit/iconEdit';
 import { ALREADY_SEE_THROUGH, ALREADY_WHITE } from '../services/image/transparent';
 import { flattenOnAccent, parseAccent } from '../services/preview';
-import { parseCssColor } from './preview';
-import type { Suggestion, SuggestionSet } from '../services/image/recommend';
+import { cssRgb, paintTile, tinted } from './draw';
 import type { Plan } from '../services/export';
 import type { IconInfo, IconSet, ManifestView } from '../types';
 
@@ -34,8 +33,6 @@ export interface EditorModel {
     iconMessage: Record<IconSlot, string | null>;
     /** The slot whose image editor is open, if any. */
     imageEditorSlot: IconSlot | null;
-    /** Designs worked out for the colour icon and the accent colour. */
-    suggestions: SuggestionSet;
 }
 
 export interface EditorHandlers {
@@ -51,10 +48,6 @@ export interface EditorHandlers {
     onIconTransparent: (slot: IconSlot) => void;
     /** Makes the shape of the outline icon white, as Teams asks. */
     onIconWhite: () => void;
-    /** Uses one of the suggested designs: colour icon, accent colour and outline icon together. */
-    onApplySuggestion: (id: Suggestion['id']) => void;
-    /** The logo alone in this colour on nothing, with a white accent colour. */
-    onIconBorderless: (colour: string) => void;
 }
 
 let handlers: EditorHandlers | null = null;
@@ -116,6 +109,13 @@ function fieldRow(def: FieldDef): HTMLElement {
             el('p', { class: 'export-reason ed-error', id: `ed-err-${def.path}`, role: 'alert', hidden: true })));
 }
 
+/** One labelled row of actions: a fixed label column, then the buttons. */
+function actionRow(label: string, ...buttons: Array<Node | null>): HTMLElement {
+    return el('div', { class: 'ed-act-row' },
+        el('span', { class: 'ed-act-label' }, label),
+        el('div', { class: 'ed-act-buttons' }, ...buttons));
+}
+
 function iconCard(slot: IconSlot): HTMLElement {
     const label = SLOT_LABEL[slot];
     const side = SLOT_SIDE[slot];
@@ -127,13 +127,6 @@ function iconCard(slot: IconSlot): HTMLElement {
         ? el('button', { id: 'ed-img-transparent-color', type: 'button', class: 'btn btn--secondary btn--sm', title: 'Take away the flat colour behind the logo, so that the accent colour shows through' }, icon('eraser', 'icon--xs'), 'Make background transparent')
         : null;
     transparent?.addEventListener('click', () => handlers?.onIconTransparent('color'));
-    const logoColour = slot === 'color'
-        ? el('span', { class: 'ed-logo-colour' },
-            el('label', { for: 'ed-img-logo-colour', class: 'ed-logo-label' }, 'Logo colour'),
-            el('input', { id: 'ed-img-logo-colour', class: 'color-input', type: 'color', value: '#2b5fd9', title: 'The colour the logo will have', 'aria-label': 'Logo colour' }),
-            el('button', { id: 'ed-img-borderless-color', type: 'button', class: 'btn btn--secondary btn--sm', title: 'Take the background away, colour the logo and make the accent colour white, so the logo stands alone' }, icon('wand', 'icon--xs'), 'Logo without background'))
-        : null;
-    logoColour?.querySelector('button')?.addEventListener('click', () => handlers?.onIconBorderless((logoColour.querySelector('input') as HTMLInputElement).value));
     const whiteShape = slot === 'outline'
         ? el('button', { id: 'ed-img-white-outline', type: 'button', class: 'btn btn--secondary btn--sm', title: 'Give every visible pixel of the outline icon the colour white' }, icon('wand', 'icon--xs'), 'Make the shape white')
         : null;
@@ -171,8 +164,9 @@ function iconCard(slot: IconSlot): HTMLElement {
             el('div', { class: 'ed-img-info' },
                 el('p', { class: 'ed-img-facts', id: `ed-img-facts-${slot}` }),
                 el('p', { class: 'ed-img-caption', id: `ed-img-caption-${slot}`, hidden: true }),
-                el('div', { class: 'ed-img-actions' }, edit, transparent, outlinePreset, whiteShape, pick, revert, file),
-                logoColour,
+                el('div', { class: 'ed-actions' },
+                    actionRow('Image', edit, pick, revert, file),
+                    actionRow('Quick fix', transparent, outlinePreset, whiteShape)),
                 el('p', { class: 'export-reason ed-error', id: `ed-img-msg-${slot}`, role: 'alert', hidden: true }))));
     // a file dropped on the card
     c.addEventListener('dragover', e => { e.preventDefault(); c.classList.add('is-over'); });
@@ -209,12 +203,10 @@ function build(root: HTMLElement): void {
         root.append(card({ icon: g.icon, title: g.title, note: g.note, id: `ed-card-${g.id}` },
             ...FIELDS.filter(f => f.group === g.id).map(fieldRow)));
     }
-    look.append(card({ icon: 'wand', title: 'Suggestions', note: 'complete designs that follow the guidance', id: 'ed-card-suggest' },
-        el('p', { class: 'field-hint', id: 'ed-suggest-note', hidden: true }),
-        el('div', { class: 'sg-list', id: 'ed-suggest-list' })));
     look.append(card({ icon: 'palette', title: 'Look', note: 'accent colour', id: 'ed-card-look' },
         ...FIELDS.filter(f => f.group === 'look').map(fieldRow)));
     look.append(iconCard('color'), iconCard('outline'), el('div', { id: 'image-editor-root' }));
+
     root.append(card({ icon: 'tag', title: 'Version', note: 'raise it when you change an app that is already installed', id: 'ed-card-version' },
         ...FIELDS.filter(f => f.group === 'version').map(fieldRow)));
 }
@@ -293,29 +285,7 @@ function updateIcon(slot: IconSlot, m: EditorModel): void {
     drawIcon(slot, now, m.shown.manifest.accentColor);
 }
 
-// ── Suggestions and the colour preview of the outline icon ───────────────────
-
-function cssRgb(name: string, fallback: string): { r: number; g: number; b: number } {
-    const raw = typeof getComputedStyle === 'function' ? getComputedStyle(document.documentElement).getPropertyValue(name) : '';
-    return parseCssColor(raw, fallback);
-}
-
-function paintTile(canvas: HTMLCanvasElement, rgba: Uint8Array, width: number, height: number): void {
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const img = ctx.createImageData(width, height);
-    img.data.set(rgba);
-    ctx.putImageData(img, 0, 0);
-}
-
-/** The shape of an icon in one colour: every visible pixel takes the colour, the alpha stays. */
-function tinted(rgba: Uint8Array, c: { r: number; g: number; b: number }): Uint8Array {
-    const out = rgba.slice();
-    for (let i = 0; i < out.length; i += 4) { out[i] = c.r; out[i + 1] = c.g; out[i + 2] = c.b; }
-    return out;
-}
+// ── The colour to try on the outline icon ────────────────────────────────────
 
 let outlineNow: IconInfo | null = null;
 
@@ -328,41 +298,6 @@ function paintBar(): void {
     const pick = parseAccent(picker.value) ?? { r: 91, g: 95, b: 199 };
     const bar = cssRgb('--bar-light-bg', '#f0f0f0');
     paintTile(canvas, flattenOnAccent(tinted(png.rgba, pick), bar), png.header.width, png.header.height);
-}
-
-let shownSuggestions: SuggestionSet | null = null;
-
-function suggestionBlock(s: Suggestion): HTMLElement {
-    const tile = el('canvas', { id: `ed-sg-${s.id}-icon`, class: 'sg-tile', 'aria-label': `${s.title}: the colour icon on the accent colour`, role: 'img' });
-    const accent = parseAccent(s.accent) ?? { r: 255, g: 255, b: 255 };
-    paintTile(tile, flattenOnAccent(s.icon.data, accent), s.icon.width, s.icon.height);
-    const bars = (['--bar-light-bg', '--bar-dark-bg'] as const).map((name, i) => {
-        const c = el('canvas', { id: `ed-sg-${s.id}-bar-${i === 0 ? 'light' : 'dark'}`, class: 'sg-bar', 'aria-label': `The outline icon on a ${i === 0 ? 'light' : 'dark'} app bar` });
-        const fg = cssRgb(i === 0 ? '--bar-light-fg' : '--bar-dark-fg', i === 0 ? '#424242' : '#ffffff');
-        paintTile(c, flattenOnAccent(tinted(s.outline.data, fg), cssRgb(name, i === 0 ? '#f0f0f0' : '#2b2b2b')), s.outline.width, s.outline.height);
-        return c;
-    });
-    const apply = el('button', { id: `ed-sg-${s.id}-apply`, type: 'button', class: 'btn btn--primary btn--sm' }, icon('check', 'icon--xs'), 'Use this design');
-    apply.addEventListener('click', () => handlers?.onApplySuggestion(s.id));
-    return el('article', { class: 'sg-item', 'data-id': s.id },
-        el('div', { class: 'sg-previews' }, tile, el('div', { class: 'sg-bars' }, ...bars)),
-        el('div', { class: 'sg-body' },
-            el('h4', { class: 'sg-title' }, s.title),
-            el('p', { class: 'sg-facts' }, `Accent colour ${s.accent} - contrast ${s.contrast.toFixed(1)} : 1`),
-            el('ul', { class: 'sg-why' }, ...s.why.map(w => el('li', {}, w))),
-            apply));
-}
-
-function updateSuggestions(set: SuggestionSet): void {
-    if (set === shownSuggestions) return;
-    shownSuggestions = set;
-    const list = $('ed-suggest-list')!;
-    clear(list);
-    list.append(...set.suggestions.map(suggestionBlock));
-    const note = $('ed-suggest-note')!;
-    note.hidden = set.note === null;
-    note.textContent = set.note ?? '';
-    $('ed-card-suggest')!.hidden = set.suggestions.length === 0 && set.note === null;
 }
 
 export function renderEditor(root: HTMLElement, m: EditorModel): void {
@@ -406,7 +341,6 @@ export function renderEditor(root: HTMLElement, m: EditorModel): void {
             }
         }
     }
-    updateSuggestions(m.suggestions);
     for (const slot of ['color', 'outline'] as const) {
         updateIcon(slot, m);
         if (m.shown.iconChanges.some(c => c.slot === slot)) any = true;
@@ -420,8 +354,6 @@ export function renderEditor(root: HTMLElement, m: EditorModel): void {
         if (preset && slot === 'outline') { preset.disabled = busy; }
         const clear = $('ed-img-transparent-color') as HTMLButtonElement | null;
         if (clear && slot === 'color') clear.disabled = busy;
-        const lone = $('ed-img-borderless-color') as HTMLButtonElement | null;
-        if (lone && slot === 'color') lone.disabled = busy;
     }
     outlineNow = m.shown.icons.outline;
     paintBar();
@@ -432,7 +364,6 @@ export function renderEditor(root: HTMLElement, m: EditorModel): void {
 
 /** Forget the built controls (a new package starts from a clean editor). */
 export function resetEditor(root: HTMLElement): void {
-    shownSuggestions = null;
     outlineNow = null;
     clear(root);
     const look = $('look-groups');

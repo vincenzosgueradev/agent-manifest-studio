@@ -121,22 +121,3 @@ export function luminance(r: number, g: number, b: number): number {
 
 /** Contrast ratio between two luminances, 1 to 21. */
 export const contrastRatio = (a: number, b: number): number => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-
-/** The contrast between two colours. */
-export const contrastOf = (a: Rgb, b: Rgb): number => contrastRatio(luminance(a.r, a.g, a.b), luminance(b.r, b.g, b.b));
-
-/**
- * `colour` made darker, a little at a time and keeping its hue, until it has at least `min` contrast against
- * `against`; a colour that already has it is returned as it is. Stops at a lightness of 5 percent.
- */
-export function darkenUntil(colour: Rgb, against: Rgb, min: number): Rgb {
-    if (contrastOf(colour, against) >= min) return colour;
-    const { h, s, l } = rgbToHsl(colour.r, colour.g, colour.b);
-    let level = l;
-    let out = colour;
-    while (level > 0.05 && contrastOf(out, against) < min) {
-        level -= 0.01;
-        out = hslToRgb(h, s, Math.max(0.05, level));
-    }
-    return out;
-}

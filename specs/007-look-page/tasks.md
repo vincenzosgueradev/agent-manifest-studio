@@ -1,0 +1,27 @@
+# Tasks: Look Page
+
+- [X] T001 Tests first: `test/palette.test.ts` (oracle from the spec: families, styles, contrast >= 3, palette of four, score order, determinism, grey logo, no mutation of input)
+- [X] T002 Tests first: `test/ui.look.test.ts` (compare band, order of cards, aligned action rows, removed ids, gallery cards, apply is one edit, refused preset)
+- [X] T003 `services/image/palette.ts`
+- [X] T004 `view/compare.ts` and `#look-compare` in `index.html`
+- [X] T005 `view/editor.ts`: card order, action rows, gallery; remove `Logo without background`
+- [X] T006 `app.ts`: `buildPresets`, apply any preset, remove `onIconBorderless`
+- [X] T007 `styles.css`: band, gallery, action rows
+- [X] T008 Update the tests of feature 005 that name the removed button or the three fixed suggestions
+- [ ] T009 Mutation entries (added, targeted runs kill every mutant); the complete `npm run test:mutation` is still to run
+- [X] T010 CHANGELOG; gates (`tsc`, `build`, `test`, `test:full`)
+- [ ] T011 Manual checks recorded in quickstart
+
+## Traceability
+
+| Requirement | Code | Test |
+|---|---|---|
+| FR-001 to FR-004 | view/compare.ts, index.html | ui.look (compare) |
+| FR-005, FR-007, FR-008 | view/editor.ts, app.ts | ui.look (gallery) |
+| FR-006, FR-012 | services/image/palette.ts | palette.test |
+| FR-009, FR-010 | view/editor.ts | ui.look (actions) |
+| FR-011 | styles.css | ui.theme, noNetwork |
+
+## Removed on 2026-10-28
+
+- The gallery of presets and everything that served it (`services/image/palette.ts`, `recommend.ts`, `darkenUntil`, `contrastOf`, the card, the styles and their tests and mutation entries). The tests of the band, the order of the cards and the aligned actions stay in `test/ui.look.test.ts`.
