@@ -13,6 +13,8 @@ import { makeTransparent, whiteShape } from './services/image/transparent';
 import { acceptResult } from './services/image/accept';
 import { decodePng } from './services/png';
 import { renderCompare, resetCompare } from './view/compare';
+import { validateManifestText, type SchemaReport } from './services/schema';
+import { renderSchema, resetSchema } from './view/schemaCard';
 import { bumpVersion } from './services/edit/fields';
 import type { FieldPath, IconSlot } from './services/edit/fields';
 import { buildReport, reportFileName, reportText } from './services/report';
@@ -101,11 +103,22 @@ function blockReason(shown: Plan, problem: string | null): string | null {
 }
 
 /** Nothing of a removed package stays in the page, hidden steps included (FR-027). */
+/** The schema report of the last manifest text: the text is the same for many renders in a row. */
+let schemaMemo: { text: string; report: SchemaReport } | null = null;
+
+function schemaFor(text: string): SchemaReport {
+    if (schemaMemo?.text === text) return schemaMemo.report;
+    const report = validateManifestText(text);
+    schemaMemo = { text, report };
+    return report;
+}
+
 function clearViews(): void {
     for (const id of ['summary', 'preview-body', 'preview-notice', 'name-body', 'edit-groups', 'look-groups', 'checks-body', 'changes-body', 'contents-body', 'export-body']) {
         $(id).replaceChildren();
     }
     resetCompare($('look-compare'));
+    resetSchema($('schema-body'), $('schema-chip-slot'));
     $('checks-summary').textContent = '';
     $('report-status').hidden = true;
     $('report-status').textContent = '';
@@ -144,6 +157,7 @@ function render(): void {
         nowIcons: shown.icons, nowAccent: m.accentColor,
         replaced: shown.iconChanges.map(c => c.slot),
     });
+    renderSchema($('schema-body'), $('schema-chip-slot'), schemaFor(shown.text));
     renderChecks($('checks-body'), $('checks-summary'), shown.checks);
     const reportStatus = $('report-status');
     reportStatus.hidden = state.reportStatus === null;
@@ -224,7 +238,7 @@ async function onExport(): Promise<void> {
 /** The report of the checks as they are on screen. */
 function currentReport(s: State): string {
     const { shown } = currentView(s);
-    return reportText(buildReport(s.ctx.pkg.fileName, shown.manifest, shown.checks, __APP_VERSION__, shown.changes.map(c => c.path)));
+    return reportText(buildReport(s.ctx.pkg.fileName, shown.manifest, shown.checks, __APP_VERSION__, shown.changes.map(c => c.path), schemaFor(shown.text)));
 }
 
 async function onCopyReport(): Promise<void> {

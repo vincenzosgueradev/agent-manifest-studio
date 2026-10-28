@@ -14,6 +14,7 @@ import {
 import { contrastRatio, luminance } from './image/colour';
 import { parseAccent } from './preview';
 import { countOutsideSafeArea } from './safeArea';
+import { schemaCheck, validateManifestText } from './schema';
 import type { Check, IconInfo, IconSet, ManifestView, NameValue, PngHeader, Verdict } from '../types';
 
 function check(id: string, label: string, verdict: Verdict, found: string, expected: string, notProven: string): Check {
@@ -164,7 +165,8 @@ function contrastCheck(icon: IconInfo, accent: string | null): Check | null {
         'Takes the logo as the average colour of the visible pixels. Does not prove how Teams or Microsoft 365 Copilot draw the tile: a light logo on a light accent colour can nearly disappear.');
 }
 
-export function runChecks(manifest: ManifestView, icons: IconSet): Check[] {
+/** `manifestText` is the manifest as it will be saved; with it the schema row is added. */
+export function runChecks(manifest: ManifestView, icons: IconSet, manifestText?: string): Check[] {
     const out: Check[] = [];
     colorIconChecks(out, icons.color);
     outlineIconChecks(out, icons.outline);
@@ -188,6 +190,7 @@ export function runChecks(manifest: ManifestView, icons: IconSet): Check[] {
         'Does not prove the colour matches the icon background, which the admin-centre customisation expects.'));
     const seen = contrastCheck(icons.color, accent);
     if (seen) out.push(seen);
+    if (manifestText !== undefined) out.push(schemaCheck(validateManifestText(manifestText)));
     return out;
 }
 

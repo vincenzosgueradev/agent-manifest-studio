@@ -77,9 +77,9 @@ describe('the checks are one table, grouped by subject, each group with a chip f
     it('groups by subject and says "all pass" for a good package', async () => {
         const ui = await boot();
         await ui.open('a.zip', packageBytes());
-        expect(groups()).toEqual(['Colour icon', 'Outline icon', 'Names', 'Descriptions', 'Accent colour']);
+        expect(groups()).toEqual(['Colour icon', 'Outline icon', 'Names', 'Descriptions', 'Accent colour', 'Manifest schema']);
         const chips = [...document.querySelectorAll('#checks-body .group-row .chip')];
-        expect(chips.map(c => c.textContent)).toEqual(Array(5).fill('all pass'));
+        expect(chips.map(c => c.textContent)).toEqual(Array(6).fill('all pass'));
         expect(chips.every(c => c.classList.contains('chip--success'))).toBe(true);
     });
 

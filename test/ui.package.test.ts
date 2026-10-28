@@ -150,7 +150,7 @@ describe('copy buttons', () => {
         await ui.open('a.zip', packageBytes({ manifest: { omit: ['developer.name'], botIds: [] } }));
         expect(copyOf('Bot ID')).toBeNull();
         expect(copyOf('Bot IDs')).toBeNull();
-        expect(document.querySelectorAll('[data-copy]').length).toBe(5);   // App ID, 3 links, accent colour
+        expect(document.querySelectorAll('[data-copy]:not(#schema [data-copy])').length).toBe(5);   // App ID, 3 links, accent colour (the schema card has its own)
     });
 
     it('shows a tick for a moment, then the copy icon again', async () => {
@@ -191,16 +191,16 @@ describe('the checks screen', () => {
         const ui = await boot();
         await ui.open('a.zip', packageBytes());
         expect(document.querySelectorAll('#checks-body table')).toHaveLength(0);
-        expect(document.querySelectorAll('#checks-body .chk-group')).toHaveLength(5);
-        expect(document.querySelectorAll('#checks-body .group-row')).toHaveLength(5);
-        expect(document.querySelectorAll('#checks-body li.check-row')).toHaveLength(18);
+        expect(document.querySelectorAll('#checks-body .chk-group')).toHaveLength(6);
+        expect(document.querySelectorAll('#checks-body .group-row')).toHaveLength(6);
+        expect(document.querySelectorAll('#checks-body li.check-row')).toHaveLength(19);
         for (const row of document.querySelectorAll('#checks-body li.check-row')) {
             expect(row.querySelector('.col-status .icon')).not.toBeNull();
             expect(row.querySelector('.col-check')!.textContent!.length).toBeGreaterThan(3);
             expect(row.querySelector('.col-found')!.textContent!.length).toBeGreaterThan(0);
         }
         const strip = () => [...document.querySelectorAll('#checks-body .chk-strip .chip')].map(c => c.textContent);
-        expect(strip()).toEqual(['18 passed']);   // nothing about warnings or failures when there are none
+        expect(strip()).toEqual(['19 passed']);   // nothing about warnings or failures when there are none
     });
 
     it('a row that passes is one line; a row that does not pass shows its rule and what it does not prove', async () => {
@@ -208,7 +208,7 @@ describe('the checks screen', () => {
         const { padPngTo } = await import('./helpers/png-encoder');
         const { colorIcon } = await import('./helpers/fixture');
         await ui.open('a.zip', packageBytes({ color: padPngTo(colorIcon(), 80 * 1024), manifest: { nameShort: 'x'.repeat(31) } }));
-        expect([...document.querySelectorAll('#checks-body .chk-strip .chip')].map(c => c.textContent)).toEqual(['16 passed', '1 with a warning', '1 failed']);
+        expect([...document.querySelectorAll('#checks-body .chk-strip .chip')].map(c => c.textContent)).toEqual(['16 passed', '2 with a warning', '1 failed']);
         expect(more('color.present').hidden).toBe(true);
         expect(more('color.weight').hidden).toBe(false);           // a warning
         expect(more('name.short.length').hidden).toBe(false);      // a failure
@@ -260,7 +260,7 @@ describe('the checks screen', () => {
         const ui = await boot();
         await ui.open('a.zip', packageBytes());
         expect($('checks-summary').classList.contains('visually-hidden')).toBe(true);
-        expect($('checks-summary').textContent).toBe('18 passed, 0 with a warning, 0 failed.');
+        expect($('checks-summary').textContent).toBe('19 passed, 0 with a warning, 0 failed.');
     });
 });
 
@@ -274,8 +274,8 @@ describe('the checks report', () => {
         expect(report.tool).toBe('Agent Manifest Studio');
         expect(report.version).toBe('0.0.0-test');
         expect(report.package).toBe('Sales.zip');
-        expect(report.checks).toHaveLength(18);
-        expect(report.summary).toEqual({ pass: 18, warning: 0, fail: 0 });
+        expect(report.checks).toHaveLength(19);
+        expect(report.summary).toEqual({ pass: 19, warning: 0, fail: 0 });
         expect(ui.text('report-status')).toBe('Report copied.');
         expect($('report-status').hidden).toBe(false);
     });

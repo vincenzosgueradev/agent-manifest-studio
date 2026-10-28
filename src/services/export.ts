@@ -36,7 +36,7 @@ export function makeContext(pkg: PackageFile): ContextResult {
     const parsed = parseManifest(manifestText);
     if (!parsed.ok) return { ok: false, message: parsed.message };
     const icons = loadIcons(pkg, parsed.manifest);
-    return { ok: true, ctx: { pkg, manifestText, manifest: parsed.manifest, icons, checks: runChecks(parsed.manifest, icons) } };
+    return { ok: true, ctx: { pkg, manifestText, manifest: parsed.manifest, icons, checks: runChecks(parsed.manifest, icons, manifestText) } };
 }
 
 export interface Plan {
@@ -91,7 +91,7 @@ export function planEdit(ctx: EditContext, suffix: string | null): PlanResult {
     if (!renamed.ok) return { ok: false, message: renamed.message };
     const parsed = parseManifest(renamed.text);
     if (!parsed.ok) return { ok: false, message: parsed.message };
-    const checks = runChecks(parsed.manifest, ctx.icons);
+    const checks = runChecks(parsed.manifest, ctx.icons, renamed.text);
     return {
         ok: true,
         plan: {
@@ -165,7 +165,7 @@ export function planEdits(ctx: EditContext, suffix: string | null, edits: Edits)
         pkg = { ...pkg, entries: kept };
     }
     const icons = loadIcons(pkg, parsed.manifest);
-    const checks = runChecks(parsed.manifest, icons);
+    const checks = runChecks(parsed.manifest, icons, patched.text);
 
     // Nothing may differ from the original but the suffix names and the edited paths (the parent of an
     // added or removed member counts: its whole value differs).

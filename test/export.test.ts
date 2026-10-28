@@ -207,7 +207,7 @@ describe('makeContext', () => {
 
     it('holds the checks of the package as loaded', () => {
         const ctx = ctxFor(packageEntries());
-        expect(ctx.checks.length).toBe(18);
+        expect(ctx.checks.length).toBe(19);   // the last one is the schema row (feature 008)
         expect(ctx.checks.every(c => c.verdict === 'pass')).toBe(true);
     });
 });

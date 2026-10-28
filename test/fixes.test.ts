@@ -37,7 +37,7 @@ describe('how to fix each check', () => {
 
     it('there is no answer for a check that does not exist', () => {
         const all = new Set(variants.flatMap(ids));
-        for (const id of Object.keys(FIXES)) expect(all.has(id) || id.startsWith('color32.') || id === 'color.contrast', id).toBe(true);
+        for (const id of Object.keys(FIXES)) expect(all.has(id) || id.startsWith('color32.') || id === 'color.contrast' || id === 'schema.valid', id).toBe(true);
     });
 
     it('each answer names a control and tells what to do, and its step is Details, Look or outside the tool', () => {

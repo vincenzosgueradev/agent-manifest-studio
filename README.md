@@ -24,7 +24,10 @@ a file and never touches an environment.
    is marked and can be reverted.
 4. Look at the preview of the colour icon on the accent colour, at several sizes and with its safe
    area, the outline icon on a light and a dark app bar, and the app name.
-5. Read the checks: icon format, size, weight, safe area, name lengths, accent colour. Copy or save the
+5. Read the checks: icon format, size, weight, safe area, name lengths, accent colour. The **Manifest schema**
+   card says whether `manifest.json` follows the JSON schema of its own `manifestVersion` (the tool has the
+   schemas 1.10 to 1.17 and 1.19 to 1.30) and explains each problem: the entry, what is wrong, what the
+   schema expects, what was found and, for a misspelt entry, the one you probably meant. Copy or save the
    report if you want to keep it.
 6. Do not have the right image? Press **Edit image** on an icon: the **image editor** removes a
    background (from the edges or everywhere, with tolerance, softness and a matte), trims, crops (by
@@ -52,6 +55,8 @@ a file and never touches an environment.
 - **Images are edited on your computer, in the tool's image editor.** The picture you open is never uploaded and
   never changed on disk; the edited icon goes only into the package you save, or into a PNG file if you
   press Save image as PNG.
+- **The manifest is checked against its JSON schema on your computer.** The schemas are part of the tool; nothing is
+  downloaded when you use it, and a problem is a warning that never stops you from saving.
 - **Nothing is read from or written to any environment.** The tool does not use a connection, does not
   query Dataverse, does not call Copilot Studio, does not publish an agent, does not import a package
   and does not change a solution.

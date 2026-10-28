@@ -812,6 +812,7 @@ body {
     .panel-head { flex-direction: column; align-items: flex-start; }
     .panel-sub { text-align: left; }
 }
+
 /* ── Look step: the band of before and after (feature 007) ── */
 .cmp {
     position: sticky; top: 0; z-index: 5;
@@ -847,3 +848,34 @@ body {
 .ed-act-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
 .ed-img-fig figcaption { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); min-height: 28px; }
 
+/* ── Checks step: the Manifest schema card (feature 008) ── */
+#schema { margin-bottom: var(--sp-4); }
+.sch-hero { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-2); }
+.sch-hero-icon { width: 32px; height: 32px; flex-shrink: 0; }
+.sch-hero--valid .sch-hero-icon { color: var(--color-success); }
+.sch-hero--invalid .sch-hero-icon { color: var(--color-warning); }
+.sch-hero--no-schema .sch-hero-icon { color: var(--color-primary); }
+.sch-hero-text { flex: 1; min-width: 0; }
+.sch-headline { margin: 0; font-size: var(--fs-md); color: var(--color-text-strong); }
+.sch-sub { margin: var(--sp-1) 0 0; color: var(--color-text-muted); font-size: var(--fs-sm); }
+.sch-source { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-3); font-size: var(--fs-sm); }
+.sch-source-label { color: var(--color-text-muted); }
+.sch-version { font-weight: 600; color: var(--color-text-strong); }
+.sch-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 200px; color: var(--color-text); font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; }
+.sch-notes { display: flex; flex-direction: column; gap: var(--sp-2); }
+.sch-note { margin: var(--sp-3) 0 0; display: flex; gap: var(--sp-2); align-items: flex-start; color: var(--color-text); font-size: var(--fs-sm); }
+.sch-groups { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-4); }
+.sch-group { border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+.sch-summary { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); cursor: pointer; background: var(--color-surface-2); }
+.sch-group-name { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; color: var(--color-text-strong); }
+.sch-list { list-style: none; margin: 0; padding: 0; }
+.sch-problem { padding: var(--sp-3) var(--sp-4); border-top: 1px solid var(--color-border); display: flex; flex-direction: column; gap: var(--sp-1); }
+.sch-head { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.sch-path { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; color: var(--color-text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sch-message { margin: 0; color: var(--color-text-strong); font-weight: 600; }
+.sch-line { margin: 0; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--sp-3); font-size: var(--fs-sm); }
+.sch-line-label { color: var(--color-text-muted); }
+.sch-line-value { overflow-wrap: anywhere; }
+.sch-line--says .sch-line-value { color: var(--color-text-muted); }
+.sch-hint { margin: var(--sp-1) 0 0; display: flex; gap: var(--sp-2); align-items: center; color: var(--color-primary); font-size: var(--fs-sm); }
+.sch-proof { margin: var(--sp-4) 0 0; color: var(--color-text-muted); font-size: var(--fs-sm); }

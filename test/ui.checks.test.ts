@@ -11,7 +11,7 @@ describe('the checks region', () => {
         const ui = await boot();
         await ui.open('a.zip', packageBytes());
         const rows = document.querySelectorAll('[data-check-id]');
-        expect(rows.length).toBe(18);
+        expect(rows.length).toBe(19);
         const r = row('name.short.length');
         expect(r.dataset.verdict).toBe('pass');
         expect(r.textContent).toContain('18 characters');              // "Sales Helper [DEV]"
@@ -19,7 +19,7 @@ describe('the checks region', () => {
         expect(r.textContent).toContain('Does not prove the name is free');   // the column "Does not prove", no need to expand
         expect(r.querySelector('details')).toBeNull();
         expect(r.querySelector('.col-status')).not.toBeNull();                 // status, check, found; rule and limits under them
-        expect(ui.text('checks-summary')).toBe('18 passed, 0 with a warning, 0 failed.');
+        expect(ui.text('checks-summary')).toBe('19 passed, 0 with a warning, 0 failed.');
     });
 
     it('verdicts differ by shape and by word, not only by colour', async () => {
@@ -36,7 +36,7 @@ describe('the checks region', () => {
         expect(row('color.present').textContent).toContain('Pass');
         expect(row('color.weight').textContent).toContain('Warning');
         expect(row('name.short.length').textContent).toContain('Fail');
-        expect(ui.text('checks-summary')).toBe('16 passed, 1 with a warning, 1 failed.');
+        expect(ui.text('checks-summary')).toBe('16 passed, 2 with a warning, 1 failed.');
     });
 
     it('a declared icon that is not in the package fails and names the file (FR-017)', async () => {

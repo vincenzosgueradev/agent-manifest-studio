@@ -16,6 +16,7 @@ const PICK_COLOUR = 'On the Colour icon card, press "Choose a 192 x 192 PNG", or
 const PICK_OUTLINE = 'On the Outline icon card, press "Outline from this icon" (it makes the 32 x 32 white shape), or "Choose a 32 x 32 PNG".';
 
 export const FIXES: Readonly<Record<string, Fix>> = {
+    'schema.valid': { text: 'Read the Manifest schema card above: each problem names the entry, says what is wrong and what the schema expects. The tool edits only some entries (the names, the descriptions, the developer, the version and the accent colour); for any other, correct manifest.json in a text editor and open the package again.', step: null },
     'color.present': { text: `The colour icon is missing. ${PICK_COLOUR}`, step: 3 },
     'color.png': { text: 'The file is not a PNG that can be read. On the Colour icon card choose a PNG file, or press "Edit image" and "Apply": the tool writes a new, valid PNG.', step: 3 },
     'color.size-px': { text: 'The icon is not 192 x 192 pixels. On the Colour icon card press "Edit image" and then "Teams-ready colour icon": it resizes the picture to 192 x 192 without stretching it. Then press "Apply".', step: 3 },

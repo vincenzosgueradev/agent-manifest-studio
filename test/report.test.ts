@@ -23,7 +23,7 @@ describe('buildReport', () => {
         expect(r.version).toBe('1.2.3');
         expect(r.package).toBe('Sales.zip');
         expect(r.app).toEqual({ id: '11111111-2222-3333-4444-555555555555', version: '1.0.0', shortName: 'x'.repeat(31), fullName: 'Sales Helper for the field team [DEV]' });
-        expect(r.summary).toEqual({ pass: ctx.checks.length - 2, warning: 1, fail: 1 });
+        expect(r.summary).toEqual({ pass: ctx.checks.length - 3, warning: 2, fail: 1 });   // the 31-letter name is also over the 30 of the schema
     });
 
     it('lists every check with its verdict, found value, rule and what is not proven', () => {

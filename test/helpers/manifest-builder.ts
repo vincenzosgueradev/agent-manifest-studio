@@ -30,6 +30,10 @@ export interface ManifestOpts {
     decoyNested?: boolean;
     /** Escapes every non-ASCII character as \uXXXX in the text. */
     unicodeEscapes?: boolean;
+    /** `manifestVersion`; `null` removes the key. */
+    manifestVersion?: string | null;
+    /** `$schema`; `null` removes the key. */
+    schemaUrl?: string | null;
     /** Dotted paths to remove, e.g. `developer.name`. */
     omit?: string[];
 }
@@ -75,8 +79,8 @@ export function buildManifest(o: ManifestOpts = {}): string {
 
     const obj: Record<string, unknown> = {
         ...(o.unknownBefore ?? {}),
-        $schema: 'https://developer.microsoft.com/en-us/json-schemas/teams/v1.19/MicrosoftTeams.schema.json',
-        manifestVersion: '1.19',
+        $schema: pick(o.schemaUrl, 'https://developer.microsoft.com/en-us/json-schemas/teams/v1.19/MicrosoftTeams.schema.json'),
+        manifestVersion: pick(o.manifestVersion, '1.19'),
         version: pick(o.appVersion, DEFAULTS.appVersion),
         id: '11111111-2222-3333-4444-555555555555',
         developer: {
