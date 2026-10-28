@@ -8,6 +8,7 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 
 ### Added
 
+- **Drop zone**: the empty first step is a large dashed zone with an upload icon, "Drop the package here" and the Open package button. It lights up while a file is dragged over it and says whether the package will be opened or replaced; a file that is not a .zip, or several files at once, are refused with a clear message, and a file dropped elsewhere on the page no longer makes the window navigate to it.
 - Load the Teams app package of a Copilot Studio agent (zip) and see everything it declares: names,
   descriptions, version, schema version, developer, accent colour, identifiers, icons, permissions
   and valid domains, with missing and unrecognised entries named.

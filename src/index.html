@@ -29,6 +29,10 @@
                     <span class="panel-sub">the zip you download from Copilot Studio</span>
                 </div>
                 <div class="panel-body">
+                    <div class="drop-overlay" id="drop-overlay" aria-live="polite" hidden>
+                        <span class="icon icon-upload drop-overlay-icon" aria-hidden="true"></span>
+                        <span class="drop-overlay-text" id="drop-overlay-text"></span>
+                    </div>
                     <div class="file-bar" id="file-bar" hidden>
                         <span class="icon icon-archive file-bar-icon" aria-hidden="true"></span>
                         <div class="file-bar-info">
@@ -39,16 +43,17 @@
                         <button type="button" class="btn btn--secondary btn--sm btn--danger" id="remove-btn" title="Remove the package and start again" aria-label="Remove the package"><span class="icon icon-trash icon--sm" aria-hidden="true"></span>Remove</button>
                     </div>
                     <div class="drop-area" id="drop-area">
-                        <span class="icon icon-archive drop-icon" aria-hidden="true"></span>
-                        <div class="drop-content">
-                            <p class="drop-text" id="drop-text">
-                                Choose the Teams app package of an agent: the zip you download from Copilot
-                                Studio. It is read on this computer and never sent anywhere.
-                            </p>
-                            <div class="drop-actions">
-                                <button type="button" class="btn btn--primary" id="open-btn"><span class="icon icon-folder icon--sm" aria-hidden="true"></span>Open package&hellip;</button>
-                            </div>
+                        <span class="drop-badge" aria-hidden="true"><span class="icon icon-upload drop-icon"></span></span>
+                        <h4 class="drop-title" id="drop-title">Drop the package here</h4>
+                        <span class="drop-or" aria-hidden="true">or</span>
+                        <div class="drop-actions">
+                            <button type="button" class="btn btn--primary" id="open-btn"><span class="icon icon-folder icon--sm" aria-hidden="true"></span>Open package&hellip;</button>
                         </div>
+                        <p class="drop-hint" id="drop-hint">Only the .zip of the Teams app package</p>
+                        <p class="drop-text" id="drop-text">
+                            Choose the Teams app package of an agent: the zip you download from Copilot
+                            Studio. It is read on this computer and never sent anywhere.
+                        </p>
                         <input type="file" id="file-input" accept=".zip,application/zip" hidden>
                     </div>
                     <div class="message message--error" id="load-message" role="alert" hidden>
