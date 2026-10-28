@@ -229,6 +229,7 @@ body {
 .subtitle:first-child { margin-top: 0; }
 
 .step-footer { display: flex; gap: var(--sp-2); margin-top: var(--sp-4); padding-bottom: var(--sp-4); }
+.step-footer[hidden], .step-footer .btn[hidden] { display: none; }
 
 /* ── Buttons ── */
 .btn {

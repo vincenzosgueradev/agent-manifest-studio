@@ -60,9 +60,16 @@ function stepperFor(active: number, loaded: boolean): HTMLElement {
 /** Shows step `n` (1 to 6), hides the others, and redraws stepper, breadcrumb and footer buttons. */
 export function showStep(n: number, loaded: boolean): number {
     const step = Math.min(Math.max(n, 1), STEPS.length);
+    const before = current;
     current = loaded ? step : 1;
 
     STEPS.forEach((s, i) => { $(`step-${s.id}`).hidden = i + 1 !== current; });
+    // A step that is opened starts at its top: the page and the panel keep the position they had when it was left.
+    // Only a change of step does it: every edit draws the same step again and must not move the page.
+    if (current !== before) {
+        $('main-content').scrollTop = 0;
+        $(`step-${STEPS[current - 1]!.id}`).scrollTop = 0;
+    }
     document.querySelectorAll<HTMLElement>('.stepper-slot').forEach(slot => {
         clear(slot);
         slot.append(stepperFor(current, loaded));
@@ -81,7 +88,12 @@ export function showStep(n: number, loaded: boolean): number {
 
     // Step 1 cannot go forward until a package is loaded.
     const next = document.querySelector<HTMLButtonElement>('#step-package [data-nav="next"]');
-    if (next) next.disabled = !loaded;
+    if (next) {
+        next.disabled = !loaded;
+        next.hidden = !loaded;
+        // The footer holds only that button on the first step: with no package there is nothing to show in it.
+        (next.closest('.step-footer') as HTMLElement | null)?.toggleAttribute('hidden', !loaded);
+    }
     return current;
 }
 

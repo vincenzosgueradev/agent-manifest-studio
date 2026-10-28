@@ -72,6 +72,11 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 
 - **Suggestions** in the Look step (the three designs of the first version and the gallery of palette presets that replaced them). A package built from a suggestion showed a blank icon in the Microsoft 365 admin center, so the feature was taken out together with its code, its tests and its styles.
 
+### Fixed
+
+- Moving to another step with Back, Next, the stepper or the breadcrumb now starts at the top of that step; before, the page kept the scroll position of the step you had left.
+- The **Next** button of the first step is hidden until a package is loaded, instead of showing disabled.
+
 ### Notes
 
 - Downloading the package from an environment was tried and removed: the host hands a zip back as text, which

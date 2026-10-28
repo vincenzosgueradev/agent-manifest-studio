@@ -27,6 +27,8 @@ describe('before a package is loaded', () => {
         expect(buttons.map(b => b.textContent!.replace(/^\d+/, ''))).toEqual(LABELS);
         expect(buttons.map(b => b.disabled)).toEqual([false, true, true, true, true, true]);
         expect(nav('step-package', 'next')!.disabled).toBe(true);
+        expect(nav('step-package', 'next')!.hidden).toBe(true);                     // nothing to go to: no button
+        expect((document.querySelector('#step-package .step-footer') as HTMLElement).hidden).toBe(true);
         expect(ui.$('breadcrumb').hidden).toBe(true);
         expect(ui.$('summary').hidden).toBe(true);
     });
@@ -44,6 +46,8 @@ describe('after a package is loaded', () => {
         expect(visible()).toEqual(['step-package']);
         expect(ui.$('summary').hidden).toBe(false);
         expect(nav('step-package', 'next')!.disabled).toBe(false);
+        expect(nav('step-package', 'next')!.hidden).toBe(false);
+        expect((document.querySelector('#step-package .step-footer') as HTMLElement).hidden).toBe(false);
         expect([...document.querySelectorAll<HTMLButtonElement>('#step-package .stepper-btn')].every(b => !b.disabled)).toBe(true);
     });
 
