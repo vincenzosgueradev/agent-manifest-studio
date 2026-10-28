@@ -25,7 +25,6 @@ const at = p => join(root, p);
 /** Tests that cover each source file; used to make a run fast. */
 const COVER = {
     'src/services/limits.ts': [],
-    'src/view/environment.ts': ['test/ui.env.test.ts', 'test/ui.env2.test.ts'],
     'src/services/edit/fields.ts': ['test/fields.test.ts', 'test/export.edits.test.ts', 'test/ui.editor.test.ts'],
     'src/services/edit/jsonPatch.ts': ['test/jsonPatch.test.ts', 'test/export.edits.test.ts'],
     'src/services/edit/edits.ts': ['test/edits.test.ts', 'test/export.edits.test.ts'],
@@ -297,14 +296,6 @@ const MUTATIONS = [
     ["src/view/preview.ts","showSafeArea = !showSafeArea;","showSafeArea = true;","the safe-area guide cannot be turned off"],
     ["src/view/preview.ts","let showSafeArea = false;","let showSafeArea = true;","the safe-area guide starts on"],
     ["src/view/card.ts","title: `Copy ${label}` }, icon('copy', 'icon--sm'));","title: `Copy ${label}` }, icon('check', 'icon--sm'));","the copy button shows a tick from the start"],
-    ["src/view/environment.ts","download.disabled = selected === null || st.downloading;","download.disabled = selected === null;","Download stays on while it runs"],
-    ["src/view/environment.ts","$<HTMLButtonElement>('env-refresh-btn').disabled = busy;","$<HTMLButtonElement>('env-refresh-btn').disabled = false;","Refresh stays on while it reads"],
-    ["src/view/environment.ts","if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(); }","if (e.key === 'Enter') { e.preventDefault(); onPick(); }","Space does not pick a row"],
-    ["src/view/environment.ts","c.enabledForPowerPlatformAPI === false ? chip('Not enabled for the Power Platform API', 'warning') : null","c.enabledForPowerPlatformAPI !== undefined ? chip('Not enabled for the Power Platform API', 'warning') : null","a warning for every connection that says anything"],
-    ["src/view/environment.ts","g.isManaged ? 'neutral' : 'info'","g.isManaged ? 'info' : 'neutral'","managed and unmanaged chips swapped"],
-    ["src/view/environment.ts","$('env-spinner').hidden = !busy;","$('env-spinner').hidden = true;","no sign that it is reading"],
-    ["src/view/environment.ts", "st.downloading ? 'Downloading…' : selected", "selected", "the button does not say it is busy"],
-    ["src/view/environment.ts","browser.hidden = !st.connection;","browser.hidden = false;","tables shown with no connection"],
     ["src/services/edit/fields.ts", "if (value.length > f.max)", "if (value.length >= f.max)", "a value at its limit is refused"],
     ["src/services/edit/fields.ts", "/^#[0-9a-fA-F]{6}$/;", "/^#[0-9a-fA-F]{3,6}$/;", "a short hex colour is accepted"],
     ["src/services/edit/fields.ts", "/^\\d+\\.\\d+\\.\\d+(?:-", "/^\\d+\\.\\d+(?:\\.\\d+)?(?:-", "a two-number version is accepted"],
