@@ -1,0 +1,327 @@
+<!--
+SYNC IMPACT REPORT (remove before commit)
+==========================================
+Version change: 1.4.0 → 1.5.0 (MINOR: Principle VI gains the rule that the GitHub description (About) and topics are kept
+in step with what the tool does, and records the text that is live today.)
+Earlier: 1.3.0 → 1.4.0 (MINOR: Principle II is narrowed back: the tool no longer reads from a connection or
+calls any host API of an environment. Feature 002 (download from an environment) was removed on 2026-10-28
+because the host hands a zip back as text, which destroys its bytes, so the package cannot be rebuilt.)
+Earlier: 1.2.0 → 1.3.0 (MINOR: the tool now also edits the pictures of the icons locally, in an
+image editor (feature 004); Image Standards say that the tool writes PNG as well as reads it and that every
+image operation has an exact definition and an independent test oracle).
+Earlier: 1.1.0 → 1.2.0 (MINOR: Principle VIII no longer limits the first release to "only the
+names changed"; feature 003 edits any safe field of the manifest and replaces the icons, and the saved
+package differs from the opened one only in what the user edited. Verified Facts gain the limits of the
+developer fields, version, valid domains and permissions, read on 2026-10-27).
+Earlier: 1.0.1 → 1.1.0 (MINOR: Principle II now allows reading from the connection the user
+selected, through the host APIs, never writing; feature 002 downloads the Teams package from an
+environment).
+Earlier: 1.0.0 → 1.0.1 (PATCH: Principle VIII wording; first release is now manifest
+reader + preview + name suffix + export; glyph/colour editing moves to the next release)
+Earlier: none → 1.0.0 (initial ratification)
+Derived from: the constitution of Agent Nameplate (testing standard, release changelog, UI and
+navigation standards) plus the lessons of its marketplace review (naming, author, theme,
+confirmation of writes, README "What this tool changes").
+Added sections: all.
+Removed sections: none.
+TODOs deferred: verify the marketplace name is free; settle the 72 KB / 100 KB conflict by test.
+==========================================
+-->
+
+# Agent Manifest Studio Constitution
+
+Agent Manifest Studio is a Power Platform ToolBox tool to **preview and prepare the icon of a
+Copilot Studio agent before it is uploaded**, without publishing the agent and without writing to
+any environment. It is a separate tool from Agent Nameplate: its own folder, specs, changelog,
+releases and constitution.
+
+## Core Principles
+
+### I. Gap-First — See the Result Before You Publish
+
+The tool MUST solve a problem that Copilot Studio, Teams and the Microsoft 365 admin surfaces do
+not solve. Today the only way to see how an agent icon will look is to upload it, publish the
+agent and look in Teams. A feature that only repeats what the Copilot Studio icon dialog already
+does (pick an icon, pick a colour) is not a reason to exist; a feature that shows the *final*
+result, or removes a manual step between the icon and the result, is.
+
+**Rationale:** the value is the shorter loop: from "I have an idea for the icon" to "I know how it
+will look in every place it appears".
+
+### II. Local, and Never Toward Environments
+
+The tool works on a Teams app package file and on what the user types. It MUST NOT read from or
+write to an environment: no connection, no Dataverse, no Power Platform API, no Copilot Studio. It
+MUST NOT call the network. Images and manifests are processed in the browser of the tool and never
+leave the machine.
+
+- The only inputs are files the user chooses (a package, an image) and what the user types.
+- The only outputs are files the user saves: a PNG, a manifest zip, a report. Nothing is sent to
+  an environment or to anyone else.
+- If a feature needs to read from or write to an environment, it requires an amendment of this
+  principle and its own release (a write also needs a named confirmation dialog: environment, scope,
+  how to undo).
+- A test proves it: no source calls a network primitive or names an environment API
+  (`dataverseAPI`, `powerplatformAPI`, connections), and the package declares no connection.
+
+**Rationale:** icons and manifests belong to real tenants. A tool that touches no environment has
+nothing to ask permission for and a short, true answer for a marketplace review. Reading was tried
+in feature 002 and removed: the host returns the downloaded zip as text, which destroys its bytes.
+
+### III. Honest Preview
+
+A preview that looks better than reality is worse than none. Therefore:
+
+- The preview shows the **flattened result as the surface really shows it**, not only the
+  uploaded PNG. Where the tool cannot reproduce a surface exactly, it says so on screen next to
+  the preview.
+- Every preview and every check states what it **does not** cover. The final judgement remains a
+  test in Teams, and each feature's quickstart lists that manual check with its recorded result.
+- Facts about Microsoft behaviour are written down with the date they were observed and where
+  (see *Verified Facts*). A fact that was not observed is marked as unknown, never assumed.
+
+**Rationale:** the first version of this idea nearly shipped a belief that was false (that the
+transparent PNG survives; it is flattened onto the accent colour). The tool exists to replace
+guessing with looking.
+
+### IV. Copilot Studio and Teams First
+
+The primary subject is the icon and the app manifest of a Copilot Studio agent in Microsoft Teams
+and Microsoft 365 Copilot. Other surfaces are in scope only if the agent's icon appears there.
+Classic chatbots are out of scope unless a spec says otherwise.
+
+### V. Marketplace Policy by Design
+
+Every release MUST satisfy the PPTB marketplace policy from the first version, because a
+rejection costs a full review cycle (changes must be completed within 14 days). Concretely:
+
+- **Name:** no Microsoft trademark or product name (Copilot, Teams, Microsoft…) in the display
+  name, package name or description as if it were the tool's own brand. Referring to them to
+  say what the tool works with is fine.
+- **Author and publisher:** the real author. No claim of being "Power Platform ToolBox" or
+  Microsoft.
+- **Version shown in the UI** is read from `package.json` at build time, never typed by hand.
+- **Theme:** the tool follows the light/dark theme of PPTB and is readable in both.
+- **README:** contains a section titled exactly `What this tool changes`, accurate and
+  complete, including "nothing is read from or written to any environment" while Principle II holds.
+- **Claims match behaviour.** No text promises more than the tool does.
+
+**Rationale:** these are exactly the five points on which Agent Nameplate was sent back for
+changes.
+
+### VI. Community Visibility
+
+The tool is a public signal of expertise: described by the gap it fills, discoverable by the
+Copilot Studio community, published on the PPTB marketplace with verified status as the target.
+MCP/headless support is added where the output is structured data an agent could use (for
+example the report of the automatic checks); it is not required for the first release.
+
+**The GitHub description is part of the product.** The repository
+`vincenzosgueradev/agent-manifest-studio` has a description (About) and topics that say what the
+tool does. They MUST stay true:
+
+- A change that adds, removes or changes what the user can do (a feature, a removed feature, a new
+  kind of input or output, a new target such as Microsoft 365 or Teams) MUST be checked against the
+  description in the same piece of work, and the description and topics updated when they no longer
+  match. The first paragraph of `README.md` MUST say the same thing.
+- The description names what the tool works with (Microsoft 365, Microsoft Teams, Copilot Studio) to
+  say what it is for, never as the tool's own brand (Principle V), and promises nothing the tool does
+  not do (Principle V, "Claims match behaviour").
+- At most 350 characters (the limit of the field). Write for someone who has never seen the tool.
+- Claude proposes the new text with the change and applies it to GitHub only when the user says so
+  (it is a public, outward-facing edit); a permission given once does not carry to the next time.
+- A release is not proposed (`/custom-ampush`, `/custom-publish`) while the description is known to
+  be out of date.
+
+Live text, 2026-10-28 (update this block with every change of the description):
+
+> Power Platform ToolBox tool to preview, check and edit the app manifest of a Copilot Studio agent
+> for Microsoft 365 and Microsoft Teams: names, descriptions, version, accent colour and icons, with
+> a built-in image editor. Works on the package file; nothing is sent anywhere.
+
+Topics: `agent-manifest`, `copilot-studio`, `microsoft-365`, `microsoft-teams`,
+`power-platform-toolbox`, `pptb-tool`.
+
+### VII. Enterprise UI and Navigation
+
+The tool MUST look and behave like enterprise software, not like a demo:
+
+- Fills the width of its PPTB container; no fixed `max-width` wrapper; adapts to a narrow pane
+  without horizontal page scrolling.
+- Any flow deeper than one level has a breadcrumb; every segment but the last is clickable and
+  returns to exactly that level without discarding the selections above it.
+- No value repeated on every row or screen when it can be stated once; no redundant chrome.
+- Empty and error states say why (the active filter, the missing file), never a blank area.
+- Labels are explicit words, not jargon.
+
+### VIII. Simplicity and Incremental Delivery
+
+Ship a working, useful tool before widening scope. The first release is: load the Teams app
+package (manifest zip), read the manifest, preview icon and name in the real places, run the
+automatic checks, change the name suffix and export the package. Editing the other manifest fields
+and replacing the icons arrived in the third feature: the package that is saved differs from the one
+that was opened only in the values the user edited, and the tool proves it before it saves.
+Choosing a glyph and a colour, comparing several agents side by side and an MCP entry point each
+arrive in their own release. No feature blocks another's release.
+
+## Tool Standards
+
+### UI Layout Standards
+- The root layout fills 100% of the available width and height.
+- Scrolling belongs to the inner data panel, not to the page shell.
+- Status and action icons are drawn with CSS shapes or basic text glyphs, never emoji (emoji
+  render as empty boxes in some fonts).
+- No browser-default checkboxes: a yes/no choice is a styled toggle or round check that follows
+  the theme.
+- Long text truncates with an ellipsis; the full value is available via `title`.
+- Colours come from CSS custom properties — no hard-coded hex values in markup. Colours chosen
+  *by the user* for an icon are data, not theme.
+- Light and dark theme are both defined and contrast-tested (text against background ≥ 4.5:1).
+
+### Image Standards
+- The image editor works on 8-bit RGBA pictures held in memory, never uploads them and never changes
+  the file they came from. Every operation has an exact written definition (specs/004-icon-image-editor/
+  research.md) and a test oracle that shares no code with the tool. Pictures other than PNG are read by
+  the decoder of the window when it has one; this is recorded as UNVERIFIED until checked by hand.
+- The tool decodes and encodes PNG itself or with a pinned, reviewed library; a decoded image is
+  checked for size, bit depth and colour type before use. A file that is not a PNG is rejected
+  with a message, not processed.
+- Pixel work is **deterministic**: the same input and options give the same bytes. Rounding
+  rules are written in the spec.
+- Operations that remove a background colour state their assumption (a glyph of one colour on a
+  solid background) and fail visibly when the image does not match it, rather than producing a
+  plausible-looking wrong result.
+- Exports keep transparency (alpha channel) when the user asked for it and say when a limit
+  (size in bytes, dimensions) is exceeded.
+
+### Verified Facts
+
+**Confirmed in Microsoft Learn (read on 2026-10-26; re-read the page before relying on a detail):**
+
+- Color icon: 192×192 px PNG; the symbol "can be any color or colors, but it must sit on a solid or
+  fully transparent square background"; a perfect square with square corners (Microsoft 365
+  applies the masking); a logo stays inside the central 120×120 safe area. Source: Teams Store
+  validation guidelines; "Teams app icon for Teams Store and app bar".
+- Outline icon: 32×32 px PNG, white on transparent (or transparent on white), no extra padding;
+  shown in the Teams app bar when the app is in use. Source: same pages; `root.icons` schema.
+- `icons.color32x32` is an optional 32×32 color icon with transparent background (manifest
+  v1.21 and later).
+- Copilot Studio: the agent icon upload is a PNG of at most 100 KB; *Colors* picks a color or
+  adds an accent color. Source: "Configure agent details and instructions".
+- A change of icon can take up to 24 hours to appear everywhere; users who already installed the
+  agent do not see the change until they reinstall it; admin-approved agents always use the icon
+  of the Teams app. Source: "Customize the look and feel of an agent"; "Connect and configure
+  an agent for Teams and Microsoft 365".
+- Admin-center app customization: the accent color "must match your icon background".
+- Manifest `name.short` is required, at most 30 characters; `name.full` at most 100; the two values
+  "must be different". `description.short` at most 80 characters, `description.full` at most 4000.
+  `accentColor` is required, a hexadecimal color starting with `#`. `icons.outline` and
+  `icons.color` are required; `icons.color32x32` is optional. Source: Microsoft 365 app manifest
+  schema (`root`, `root.name`, `root.description`, `root.icons`, v1.30), read on 2026-10-26.
+- A package is a zip with `manifest.json` at its root and the icon files at the relative paths the
+  manifest declares. Source: "App package for Microsoft 365", read on 2026-10-26.
+
+**Confirmed in Microsoft Learn on 2026-10-27 (manifest schema v1.30, pages `root` and `root.developer`):**
+
+- `developer.name` required, at most 32; `developer.websiteUrl`, `privacyUrl`, `termsOfUseUrl` at most
+  2048 and start with `http://` or `https://` (the store validation asks for HTTPS).
+- `version` required, semver, at most 256; an Office add-in limits each segment to five digits.
+- `validDomains`: at most 100 items, each at most 2048; Teams rules allow wildcards (`*.example.com`)
+  that stand alone in a segment with only wildcards before them, and not domains outside the app's
+  control. (The rule "include the protocol" is for Office add-ins.)
+- `permissions` is deprecated, at most 2 of `identity`, `messageTeamMembers`; `devicePermissions` at
+  most 5 of `geolocation`, `media`, `notifications`, `midi`, `openExternal`.
+- Not verified: whether Teams rejects a custom app with an `http` developer link or without
+  `termsOfUseUrl` (see specs/003-manifest-editor/research.md).
+
+**Documentation conflicts:** another Copilot Studio page ("Create and delete agents") says the
+icon must be below 72 KB and at most 192×192 px, against 100 KB above. Until it is tested, the
+tool warns above 72 KB and fails above 100 KB.
+
+**Observed by us, not in the documentation (2026-10-26, a real agent in a development environment):**
+
+- With no accent chosen, the manifest still carries a default `accentColor` (`#07687d`, dark teal).
+- In the package downloaded from Copilot Studio, `color.png` is 192×192 with an alpha channel but
+  **flattened onto the accent color**: a transparent PNG uploaded in the dialog comes out as the
+  glyph over a solid accent-colored background.
+- The manifest `name.short` and `name.full` carry the agent's display name at download time.
+- A manifest zip in which `color.png` was made transparent by the tool's own algorithm and
+  `accentColor` set to `#FFFFFF` was accepted by Teams as a custom app, and the teal tile did
+  not come back. Against the documentation this is consistent: a fully transparent background
+  is allowed for the color icon.
+
+- Uploading a package to the Microsoft 365 admin center ("Upload agent") whose manifest `version` is not
+  higher than the installed one is refused: "Must upload a newer version of the title than what is already
+  present" (observed 2026-10-27, a package saved by this tool with the same version). The package itself,
+  edited by this tool, was accepted as a package.
+
+Anything not listed here is unknown. Each fact MUST be re-verified before a feature relies on it,
+and the check recorded in that feature's `research.md`.
+
+### Testing Standard
+
+Every decision the tool makes MUST be covered by a **test matrix**, not by examples. Passing tests
+prove nothing unless they would fail in front of a real defect.
+
+1. **Matrix, not examples.** A function with more than one input dimension is tested over every
+   combination of its dimensions while the space stays up to about a million cases; beyond that,
+   over every *pair* of values plus seeded random samples. The exhaustive run stays available
+   (`npm run test:full`).
+2. **Independent oracle.** The expected result is written from the spec, with no code shared with
+   `src/`. A test that recomputes the answer with the code under test cannot fail. For pixel work
+   the oracle is a hand-computed table of expected values, not a second implementation.
+3. **Real code path.** Tests run the production code and replace only the outside world (the file
+   system, the PPTB API). The UI is tested by loading the real page.
+4. **Negative tests.** Anything that validates or detects is tested against the inputs it has to
+   reject: not a PNG, truncated PNG, wrong colour type, background that is not solid, a glyph of
+   more than one colour, a manifest without the expected keys.
+5. **Mutation check.** The suite MUST catch deliberately broken variants of the code
+   (`npm run test:mutation`). A surviving variant is a missing test and is fixed before the work
+   is declared done. While the mutation run is going, nobody edits `src/`.
+6. **Test first for defects.** A defect found by hand is reproduced by a failing test before it
+   is fixed, and the test stays.
+7. **No tenant data.** Fixtures are generated; real manifests, zips and agent icons from a tenant
+   are never committed.
+8. **Gates.** `npm test` and `tsc` pass before every commit that touches code;
+   `npm run test:full` and `npm run test:mutation` pass before every release.
+9. **Say what is not covered.** What tests cannot see (pixels as Teams really draws them,
+   Teams' caching, the dark theme of a real client) is listed in the feature's quickstart as a
+   manual check, with the result recorded.
+
+**Rationale:** examples find the bugs we already thought of; matrices, oracles and mutations find
+the others.
+
+## Publishing & Community
+
+### Tool Validation Gate
+Before publishing to the PPTB marketplace, each release MUST pass:
+1. Local PPTB validation (`npm run validate`) with no warnings left unexplained.
+2. The policy checklist of Principle V, checked line by line against the current policy page.
+3. A hand test of the real tool in PPTB, in both themes, recorded in the feature's quickstart.
+
+### Release Changelog
+
+Every release MUST be documented in `CHANGELOG.md` **before** it is published. The file follows
+*Keep a Changelog* and Semantic Versioning:
+
+1. One section per version, newest first, headed `## [x.y.z] - YYYY-MM-DD`. The entry exists in
+   the commit that precedes `npm publish`, and its number matches the version published.
+2. Changes are grouped under **Added**, **Changed**, **Fixed**, **Removed**, **Security**. A
+   release that asks something of the user carries an **Upgrade notes** section.
+3. Entries are written for the person who installs the tool: what changed for them and why it
+   matters; a fix states the symptom that was seen.
+4. A behaviour change that contradicts what a previous version did is listed under **Changed**,
+   even when it is a fix.
+5. The version of the newest entry equals the `version` in `package.json` at publish time. The
+   version is set by `/custom-publish`, never by `npm run publish-package`.
+
+## Governance
+
+This constitution supersedes other practices for this tool. Amendments require a documented
+rationale, a semantic version bump (MAJOR: a principle removed or redefined; MINOR: a principle
+or section added; PATCH: wording) and an updated *Last Amended* date. Every feature spec is
+reviewed against all eight Core Principles before the build starts; a feature that breaks
+Principle II (local and read-only) or Principle V (marketplace policy) MUST NOT proceed without
+an amendment.
+
+**Version**: 1.5.0 | **Ratified**: 2026-10-26 | **Last Amended**: 2026-10-28

@@ -1,0 +1,472 @@
+/**
+ * Mutation check: breaks the code on purpose, one realistic defect at a time, and verifies that
+ * the test suite notices.
+ *
+ *   npm run test:mutation            all mutations
+ *   node scripts/mutation-check.mjs zip   only those whose file or description contains "zip"
+ *
+ * A passing suite proves nothing unless it would fail in front of a real defect. Each mutation here
+ * is such a defect (a boundary moved by one, a check skipped, a key ignored). If the suite stays
+ * green, that defect would have gone unnoticed: add the missing test, then run this again.
+ *
+ * Every file is restored from the content kept in memory, also on Ctrl+C. Nobody edits `src/` while
+ * this runs. A mutation is first run against the tests that cover its file; if it survives there it
+ * is run against the whole suite before being declared a survivor.
+ */
+
+import { readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const at = p => join(root, p);
+
+/** Tests that cover each source file; used to make a run fast. */
+const COVER = {
+    'src/services/limits.ts': [],
+    'src/view/environment.ts': ['test/ui.env.test.ts', 'test/ui.env2.test.ts'],
+    'src/services/edit/fields.ts': ['test/fields.test.ts', 'test/export.edits.test.ts', 'test/ui.editor.test.ts'],
+    'src/services/edit/jsonPatch.ts': ['test/jsonPatch.test.ts', 'test/export.edits.test.ts'],
+    'src/services/edit/edits.ts': ['test/edits.test.ts', 'test/export.edits.test.ts'],
+    'src/services/edit/iconEdit.ts': ['test/edits.test.ts', 'test/ui.editor.test.ts'],
+    'src/view/changes.ts': ['test/ui.editor.test.ts'],
+    'src/view/editor.ts': ['test/ui.editor.test.ts'],
+    'src/services/image/colour.ts': ['test/image.ops.test.ts', 'test/image.pipeline.test.ts'],
+    'src/services/image/ops.ts': ['test/image.ops.test.ts', 'test/image.pipeline.test.ts'],
+    'src/services/image/resample.ts': ['test/image.ops.test.ts', 'test/image.pipeline.test.ts'],
+    'src/services/image/pipeline.ts': ['test/image.pipeline.test.ts', 'test/ui.image.test.ts'],
+    'src/services/image/pngWrite.ts': ['test/image.pipeline.test.ts'],
+    'src/services/image/import.ts': ['test/image.pipeline.test.ts', 'test/ui.image.test.ts'],
+    'src/services/image/accept.ts': ['test/image.pipeline.test.ts', 'test/ui.image.test.ts'],
+    'src/services/image/transparent.ts': ['test/ui.editor.test.ts'],
+    'src/services/image/recommend.ts': ['test/recommend.test.ts', 'test/ui.suggest.test.ts'],
+    'src/view/imageEditor.ts': ['test/ui.image.test.ts'],
+    'src/services/safeArea.ts': ['test/safeArea.test.ts', 'test/checks.safearea.test.ts'],
+    'src/services/report.ts': ['test/report.test.ts', 'test/ui.package.test.ts'],
+    'src/view/contents.ts': ['test/ui.package.test.ts', 'test/ui.editor.test.ts'],
+    'src/services/zip.ts': ['test/zip.test.ts', 'test/export.test.ts', 'test/edits.test.ts'],
+    'src/services/manifest.ts': ['test/manifest.test.ts', 'test/rename.test.ts'],
+    'src/services/suffix.ts': ['test/suffix.test.ts', 'test/rename.test.ts', 'test/export.test.ts'],
+    'src/services/rename.ts': ['test/rename.test.ts', 'test/export.test.ts'],
+    'src/services/png.ts': ['test/png.test.ts'],
+    'src/services/preview.ts': ['test/preview.test.ts', 'test/ui.flow.test.ts'],
+    'src/services/checks.ts': ['test/checks.test.ts', 'test/export.test.ts', 'test/ui.checks.test.ts'],
+    'src/services/export.ts': ['test/export.test.ts', 'test/export.edits.test.ts', 'test/ui.edit.test.ts'],
+    'src/view/preview.ts': ['test/ui.flow.test.ts', 'test/ui.package.test.ts', 'test/cssColor.test.ts'],
+    'src/view/checks.ts': ['test/ui.checks.test.ts', 'test/ui.cards.test.ts', 'test/ui.package.test.ts'],
+    'src/view/nameEditor.ts': ['test/ui.edit.test.ts', 'test/ui.steps.test.ts'],
+    'src/view/exportPanel.ts': ['test/ui.edit.test.ts'],
+    'src/view/steps.ts': ['test/ui.steps.test.ts', 'test/steps.unit.test.ts'],
+    'src/view/summary.ts': ['test/ui.flow.test.ts', 'test/ui.cards.test.ts'],
+    'src/view/card.ts': ['test/ui.cards.test.ts', 'test/ui.flow.test.ts'],
+    'src/icons.ts': ['test/ui.cards.test.ts', 'test/ui.checks.test.ts'],
+    'src/view/loader.ts': ['test/ui.flow.test.ts', 'test/ui.package.test.ts', 'test/ui.message.test.ts'],
+    'src/app.ts': ['test/ui.flow.test.ts', 'test/ui.edit.test.ts', 'test/ui.editor.test.ts'],
+    'src/services/theme.ts': ['test/ui.theme.test.ts'],
+    'src/styles.css': ['test/ui.theme.test.ts'],
+};
+
+const L = 'src/services/limits.ts';
+const Z = 'src/services/zip.ts';
+const M = 'src/services/manifest.ts';
+const S = 'src/services/suffix.ts';
+const R = 'src/services/rename.ts';
+const P = 'src/services/png.ts';
+const V = 'src/services/preview.ts';
+const C = 'src/services/checks.ts';
+const E = 'src/services/export.ts';
+
+/** [file, from (string or RegExp, first occurrence), to, what the defect would be] */
+const MUTATIONS = [
+    // ── limits.ts: every number the tool compares against
+    [L, 'PACKAGE_MAX_BYTES = 5 * 1024 * 1024', 'PACKAGE_MAX_BYTES = 6 * 1024 * 1024', 'package limit 5 MB moved'],
+    [L, 'ENTRY_MAX_BYTES = 1024 * 1024', 'ENTRY_MAX_BYTES = 2 * 1024 * 1024', 'entry limit 1 MB moved'],
+    [L, 'ENTRY_MAX_COUNT = 200', 'ENTRY_MAX_COUNT = 201', 'entry count limit moved'],
+    [L, 'PACKAGE_UNPACKED_MAX_BYTES = 16 * 1024 * 1024', 'PACKAGE_UNPACKED_MAX_BYTES = 17 * 1024 * 1024', 'unpacked limit moved'],
+    [L, 'NAME_SHORT_MAX = 30', 'NAME_SHORT_MAX = 31', 'short name limit moved'],
+    [L, 'NAME_FULL_MAX = 100', 'NAME_FULL_MAX = 101', 'full name limit moved'],
+    [L, 'DESC_SHORT_MAX = 80', 'DESC_SHORT_MAX = 81', 'short description limit moved'],
+    [L, 'DESC_FULL_MAX = 4000', 'DESC_FULL_MAX = 4001', 'full description limit moved'],
+    [L, 'COLOR_ICON_SIDE = 192', 'COLOR_ICON_SIDE = 193', 'colour icon side moved'],
+    [L, 'OUTLINE_ICON_SIDE = 32', 'OUTLINE_ICON_SIDE = 33', 'outline icon side moved'],
+    [L, 'COLOR32_ICON_SIDE = 32', 'COLOR32_ICON_SIDE = 33', 'small colour icon side moved'],
+    [L, 'ICON_WARN_BYTES = 72 * 1024', 'ICON_WARN_BYTES = 73 * 1024', 'weight warning threshold moved'],
+    [L, 'ICON_FAIL_BYTES = 100 * 1024', 'ICON_FAIL_BYTES = 101 * 1024', 'weight failure threshold moved'],
+    [L, 'SUFFIX_MAX = 20', 'SUFFIX_MAX = 21', 'suffix length limit moved'],
+    [L, 'PNG_MAX_SIDE = 4096', 'PNG_MAX_SIDE = 4097', 'PNG side limit moved'],
+
+    // ── zip.ts
+    [Z, 'if (bytes.length > PACKAGE_MAX_BYTES)', 'if (bytes.length >= PACKAGE_MAX_BYTES)', 'file limit off by one'],
+    [Z, 'if (directory.length > ENTRY_MAX_COUNT)', 'if (directory.length >= ENTRY_MAX_COUNT)', 'entry count off by one'],
+    [Z, 'if (item.size > ENTRY_MAX_BYTES)', 'if (item.size >= ENTRY_MAX_BYTES)', 'entry size off by one'],
+    [Z, 'if (unpacked > PACKAGE_UNPACKED_MAX_BYTES)', 'if (unpacked >= PACKAGE_UNPACKED_MAX_BYTES)', 'unpacked total off by one'],
+    [Z, 'if (!isSafePath(item.name)) {', 'if (false) {', 'unsafe paths accepted'],
+    [Z, 'if (seen.has(item.name)) {', 'if (false) {', 'duplicate paths accepted'],
+    [Z, "path.includes('\\\\') || ", '', 'backslash paths accepted'],
+    [Z, "/^[A-Za-z]:/.test(path)", 'false', 'drive-letter paths accepted'],
+    [Z, "s !== '..'", 'true', 'parent-folder segments accepted'],
+    [Z, "s !== '.' && ", '', 'current-folder segments accepted'],
+    [Z, "s !== '' && ", '', 'empty segments accepted'],
+    [Z, 'unzipSync(bytes, { filter: f => { directory.push({ name: f.name, size: f.originalSize }); return false; } });', 'unzipSync(bytes, { filter: f => { directory.push({ name: f.name, size: f.originalSize }); return true; } });', 'entries are inflated before their size is checked'],
+    [Z, "if (!entries.some(e => e.path === 'manifest.json')) {", 'if (false) {', 'a package without manifest accepted'],
+    [Z, "const nested = entries.find(e => e.path.endsWith('/manifest.json'));", 'const nested = entries.find(() => false);', 'manifest in a sub-folder is not told apart'],
+    [Z, 'const FIXED_DATE = new Date(1980, 0, 1, 0, 0, 0);', 'const FIXED_DATE = new Date();', 'entry date is the current time'],
+    [Z, 'out[e.path] = [data, { mtime: FIXED_DATE, level: e.isDirectory ? 0 : 6 }];', 'out[e.path] = [data, { level: 6 }];', 'entry date is not fixed'],
+    [Z, "Object.prototype.hasOwnProperty.call(replaced, e.path) ? replaced[e.path]! : e.data", 'e.data', 'the replaced manifest is never written'],
+
+    // ── manifest.ts
+    [M, "str(at(m, 'name', 'short'))", "str(at(m, 'name', 'full'))", 'short name read from the full name'],
+    [M, 'const unknownKeys = Object.keys(m).filter(k => !KNOWN_KEYS.includes(k));', 'const unknownKeys: string[] = [];', 'unknown keys never reported'],
+    [M, 'const unknownKeys = Object.keys(m).filter(k => !KNOWN_KEYS.includes(k));', 'const unknownKeys = Object.keys(m);', 'known keys reported as unknown'],
+    [M, "'description.full', 'icons.color', 'icons.outline', 'accentColor',", "'description.full', 'icons.color', 'icons.outline',", 'a missing accent colour is not reported'],
+    [M, 'text.charCodeAt(0) === 0xfeff ? text.slice(1) : text', 'text', 'byte-order mark breaks parsing'],
+    [M, "{ fatal: true, ignoreBOM: true }", "{ fatal: false, ignoreBOM: true }", 'invalid UTF-8 is silently replaced'],
+    [M, "{ fatal: true, ignoreBOM: true }", "{ fatal: true, ignoreBOM: false }", 'byte-order mark dropped from the text'],
+    [M, "if (!isObject(parsed)) {", "if (false) {", 'a JSON array is accepted as a manifest'],
+    [M, "if (c === '\\\\') { i += 2; continue; }", "if (c === '\\\\') { i += 1; continue; }", 'escaped quotes end a string early'],
+    [M, 'if (seenName) throw new DuplicateNameKey();', '', 'a second name object is accepted'],
+    [M, 'if (seen.has(member)) throw new DuplicateNameKey();', '', 'a repeated short/full key is accepted'],
+    [M, "if (member !== 'short' && member !== 'full') return false;", "if (member !== 'short') return false;", 'full name never located'],
+    [M, "if (key !== 'name') return false;", "if (key !== 'name' && key !== 'description') return false;", 'another object treated as name'],
+
+    // ── suffix.ts
+    [S, '{1,${SUFFIX_MAX}}', '{0,${SUFFIX_MAX}}', 'empty brackets recognised as suffix'],
+    [S, '{1,${SUFFIX_MAX}}', '{1,${SUFFIX_MAX + 1}}', 'suffix longer than the limit recognised'],
+    [S, '^(.*?)( ?)\\\\[', '^(.*?)( *)\\\\[', 'several spaces taken as the separator'],
+    [S, '^(.*?)( ?)\\\\[', '^(.*)( ?)\\\\[', 'greedy base swallows the suffix'],
+    [S, 'const KEY_RE = /^\\[\\[.*\\]\\]$/s;', 'const KEY_RE = /\\[\\[.*\\]\\]/s;', 'a name containing a key is taken as a key'],
+    [S, "if (suffix === '') return parts.base;", "if (suffix === '') return parts.base + parts.separator;", 'empty suffix leaves its space behind'],
+    [S, "return parts.base === '' ? `[${suffix}]` : `${parts.base} [${suffix}]`;", 'return `${parts.base} [${suffix}]`;', 'empty base gets a leading space'],
+    [S, 'if (parts.hasBrackets) return `${parts.base}${parts.separator}[${suffix}]`;', 'if (parts.hasBrackets) return `${parts.base} [${suffix}]`;', 'the original separator is not kept'],
+    [S, 'if ([...value].length > SUFFIX_MAX)', 'if ([...value].length >= SUFFIX_MAX)', 'suffix limit off by one'],
+    [S, 'if ([...value].length > SUFFIX_MAX)', 'if (value.length > SUFFIX_MAX)', 'suffix length counted in UTF-16 units'],
+    [S, 'if (/[\\[\\]]/.test(value))', 'if (false)', 'brackets accepted in the typed suffix'],
+    [S, '[\\u0000-\\u001f\\u007f]', '[\\u0001-\\u001f\\u007f]', 'NUL accepted in the typed suffix'],
+    [S, 'const value = input.trim();', 'const value = input;', 'the typed suffix is not trimmed'],
+
+    // ── rename.ts
+    [R, "const short = nameShort.kind === 'literal' ? composeName(nameShort, suffix) : null;", 'const short = composeName(nameShort, suffix);', 'a localisation key or missing name is rewritten'],
+    [R, "const full = nameFull.kind === 'literal' ? composeName(nameFull, suffix) : null;", 'const full = composeName(nameFull, suffix);', 'a localisation key or missing full name is rewritten'],
+    [R, '.sort((a, b) => b.span.start - a.span.start)', '.sort((a, b) => a.span.start - b.span.start)', 'edits applied front to back'],
+    [R, 'if (JSON.stringify(actual) !== JSON.stringify(expected)) return integrity();', '', 'the safety net is removed'],
+    [R, 'out = out.slice(0, span.start) + JSON.stringify(value) + out.slice(span.end);', 'out = out.slice(0, span.start) + `"${value}"` + out.slice(span.end);', 'new names are not escaped'],
+    [R, 'if (!spans.ok) return spans;', '', 'a duplicated name key is ignored'],
+
+    // ── png.ts
+    [P, 'if (header.bitDepth !== 8) {', 'if (false) {', '16-bit images decoded as 8-bit'],
+    [P, 'if (header.interlace === 1) {', 'if (false) {', 'interlaced images decoded as plain'],
+    [P, 'if (header.width > PNG_MAX_SIDE || header.height > PNG_MAX_SIDE) {', 'if (header.width > PNG_MAX_SIDE) {', 'tall images not bounded'],
+    [P, 'if (header.width === 0 || header.height === 0)', 'if (header.width === 0)', 'zero height accepted'],
+    [P, 'if (crc32(bytes, pos + 4, pos + 8 + length) !== u32(bytes, pos + 8 + length)) {', 'if (false) {', 'checksums not verified'],
+    [P, 'raw = unzlibSync(compressed, { out: new Uint8Array(expected + 1) });', 'raw = unzlibSync(compressed, { out: new Uint8Array(expected) });', 'oversize image data not detected'],
+    [P, 'if (raw.length !== expected) {', 'if (raw.length < expected) {', 'extra image data accepted'],
+    [P, 'if (filter > 4)', 'if (filter > 5)', 'filter type 5 accepted'],
+    [P, 'if (filter === 1) predictor = a;', 'if (filter === 1) predictor = b;', 'Sub filter wrong'],
+    [P, 'else if (filter === 2) predictor = b;', 'else if (filter === 2) predictor = a;', 'Up filter wrong'],
+    [P, 'else if (filter === 3) predictor = (a + b) >> 1;', 'else if (filter === 3) predictor = (a + b) >> 2;', 'Average filter wrong'],
+    [P, 'predictor = pa <= pb && pa <= pc ? a : pb <= pc ? b : c;', 'predictor = pa < pb && pa < pc ? a : pb < pc ? b : c;', 'Paeth tie-break wrong'],
+    [P, 'if (idx * 3 + 2 >= palette!.length)', 'if (false)', 'palette index out of range accepted'],
+    [P, "if (!plte) return corrupt('A palette image has no palette (PLTE).');", '', 'a palette image without palette accepted'],
+    [P, "if (chunks[chunks.length - 1]!.type !== 'IEND')", 'if (false)', 'a file without end chunk accepted'],
+    [P, "if (idat.length === 0) return corrupt('The file has no image data (IDAT).');", '', 'a file without image data accepted'],
+    [P, 'rgba[d + 3] = keyed ? 0 : 255;', 'rgba[d + 3] = 255;', 'colour-key transparency ignored'],
+    [P, 'rgba[d + 3] = trnsBytes !== null && idx < trnsBytes.length ? trnsBytes[idx]! : 255;', 'rgba[d + 3] = 255;', 'palette transparency ignored'],
+    [P, "if (!VALID_DEPTHS[header.colorType]!.includes(header.bitDepth)) {", 'if (false) {', 'impossible bit depth accepted'],
+    [P, "if (!(header.colorType in CHANNELS))", 'if (false)', 'impossible colour type accepted'],
+
+    // ── preview.ts (service)
+    [V, 'accent.r * (255 - a) + 127', 'accent.r * (255 - a) + 128', 'red channel rounding wrong'],
+    [V, 'accent.g * (255 - a) + 127', 'accent.g * (255 - a) + 0', 'green channel rounding wrong'],
+    [V, 'accent.b * (255 - a) + 127', 'accent.b * (255 - a) + 254', 'blue channel rounding wrong'],
+    [V, 'out[i + 3] = 255;', 'out[i + 3] = a;', 'output keeps the source transparency'],
+    [V, 'const HEX6 = /^#(', 'const HEX6 = /#(', 'accent colour with leading text accepted'],
+    [V, '([0-9a-fA-F]{2})$/;', '([0-9a-fA-F]{2})/;', 'accent colour with trailing text accepted'],
+    [V, '([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/', '([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{0,2})$/', 'short accent colour accepted'],
+
+    // ── checks.ts
+    [C, "icon.byteLength > ICON_FAIL_BYTES ? 'fail'", "icon.byteLength >= ICON_FAIL_BYTES ? 'fail'", 'failure weight boundary off by one'],
+    [C, ": icon.byteLength > ICON_WARN_BYTES ? 'warning'", ": icon.byteLength >= ICON_WARN_BYTES ? 'warning'", 'warning weight boundary off by one'],
+    [C, "header.width === header.height ? 'pass' : 'fail'", "'pass'", 'a non-square icon passes'],
+    [C, 'header.width === COLOR_ICON_SIDE && header.height === COLOR_ICON_SIDE', 'header.width === COLOR_ICON_SIDE', 'only the width of the colour icon is checked'],
+    [C, 'header.width === OUTLINE_ICON_SIDE && header.height === OUTLINE_ICON_SIDE', 'header.width === OUTLINE_ICON_SIDE', 'only the width of the outline icon is checked'],
+    [C, 'png.rgba[i + 3]! > 0 &&', 'png.rgba[i + 3]! > 1 &&', 'an almost transparent non-white pixel is ignored'],
+    [C, '(png.rgba[i] !== 255 || png.rgba[i + 1] !== 255 || png.rgba[i + 2] !== 255)', '(png.rgba[i] !== 255 || png.rgba[i + 1] !== 255)', 'the blue channel of the outline is not checked'],
+    [C, "const ok = png.kind === 'ok' || png.kind === 'unsupported';", "const ok = png.kind === 'ok';", 'a valid PNG the tool cannot draw fails the PNG check'],
+    [C, "return check(id, label, n <= max ? 'pass' : 'fail', `${n} characters`, rule, 'Does not prove the name is free or follows your naming rules.');", "return check(id, label, n < max ? 'pass' : 'fail', `${n} characters`, rule, 'Does not prove the name is free or follows your naming rules.');", 'name limit off by one'],
+    [C, "return check(id, label, n <= max ? 'pass' : 'fail', `${n} characters`, rule, notProven);", "return check(id, label, n < max ? 'pass' : 'fail', `${n} characters`, rule, notProven);", 'description limit off by one'],
+    [C, 'const length = (s: string): number => [...s].length;', 'const length = (s: string): number => s.length;', 'characters counted in UTF-16 units'],
+    [C, "const same = both && manifest.nameShort.raw === manifest.nameFull.raw;", 'const same = false;', 'identical short and full names pass'],
+    [C, "accent !== null && parseAccent(accent) !== null ? 'pass' : 'fail'", "accent !== null ? 'pass' : 'fail'", 'any accent text passes'],
+    [C, "return after.filter(c => c.id.startsWith('name.') && c.verdict === 'fail' && was.get(c.id) !== 'fail');", "return after.filter(c => c.verdict === 'fail' && was.get(c.id) !== 'fail');", 'any new failure blocks the export'],
+    [C, "return after.filter(c => c.id.startsWith('name.') && c.verdict === 'fail' && was.get(c.id) !== 'fail');", "return after.filter(c => c.id.startsWith('name.') && c.verdict === 'fail');", 'a failure already in the original blocks the export'],
+    [C, "name.kind === 'localisationKey'", "name.kind === 'literalKey'", 'a localisation key is measured as text'],
+    [C, "if (icons.color32x32) smallColorChecks(out, icons.color32x32);", '', 'the small colour icon is never checked'],
+
+    // ── export.ts
+    ["src/services/export.ts", "if (plan.blocking.length > 0 || plan.invalid.length > 0)", "if (plan.invalid.length > 0)", "export proceeds while a name check fails"],
+    [E, 'blocking: blockingChecks(ctx.checks, checks),', 'blocking: [],', 'nothing ever blocks'],
+    [E, "remaining: checks.filter(c => c.verdict === 'fail'),", "remaining: checks.filter(c => c.verdict !== 'pass'),", 'warnings listed as failures'],
+    [E, "remaining: ctx.checks.filter(c => c.verdict === 'fail'),", 'remaining: [],', 'remaining failures hidden when nothing changed'],
+    [E, "original.replace(/\\.zip$/i, '')", "original.replace(/\\.zip$/, '')", 'upper-case .ZIP kept in the suggested name'],
+    [E, "|| 'no-suffix'", "|| ''", 'empty suffix leaves a dangling hyphen'],
+    [E, "? 'copy'", "? 'new'", 'unchanged copy named differently'],
+    [E, "[<>:\"/\\\\|?*\\u0000-\\u001f]", "[<>:\"/|?*\\u0000-\\u001f]", 'backslash kept in the file name'],
+    [E, 'changed: renamed.text !== ctx.manifestText,', 'changed: true,', 'every edit counts as a change'],
+
+    // ── views and app
+    ["src/app.ts", "...shown.blocking.map(c => `${c.label} is ${c.found}, ${c.expected}`),", "", "the export button never explains a block"],
+    ["src/app.ts", "if (problem) return problem;", "", "an unusable suffix does not disable the export"],
+    ["src/app.ts", "    state.typed = value;\n    state.status = null;", "    state.typed = value;", "the status of the previous save stays after typing"],
+    ['src/app.ts', "if (s.kind === 'literal' && splitName(s.raw).hasBrackets) return s.suffix;", "if (s.kind === 'literal') return s.suffix;", 'the input starts with a wrong suffix'],
+    ["src/app.ts", "origin, edits: EMPTY,", "origin, edits: state?.edits ?? EMPTY,", "the edit survives loading another package"],
+    ['src/app.ts', 'const saved = await savePackage(result.suggestedFileName, result.bytes);', 'const saved = await savePackage(result.suggestedFileName, new Uint8Array(0));', 'an empty file is saved'],
+    ['src/app.ts', "state.status = saved === null ? 'Not saved: the save dialog was cancelled.' : `Saved: ${saved}`;", 'state.status = `Saved: ${saved}`;', 'a cancelled save is reported as saved'],
+    ['src/app.ts', "if (typed && !typed.ok) return;", '', 'export proceeds with an unusable suffix'],
+    ['src/view/nameEditor.ts', 'input.disabled = !editable;', 'input.disabled = false;', 'the input stays enabled when both names are keys'],
+    ['src/view/nameEditor.ts', "if (n.kind === 'localisationKey') {\n        return el('span', { class: 'readonly-reason' }, 'A localisation key: the real text is in a language file, so it is not changed here.');", "if (n.kind === 'localisationKey') {\n        return el('span', { class: 'readonly-reason' }, text ?? n.raw);", 'a localisation key shown as if it changed'],
+    ['src/view/exportPanel.ts', 'button.disabled = p.disabledReason !== null;', 'button.disabled = false;', 'the save button is never disabled'],
+    ['src/view/exportPanel.ts', "'Nothing is sent anywhere. The new package is saved on your computer.'", "''", 'the privacy sentence is missing'],
+    ['src/view/preview.ts', "'This is the name of the Teams app in the manifest. It is not the name of the agent in Copilot Studio or in Dataverse.'", "'This is the name of the agent.'", 'the name notice is wrong'],
+    ['src/view/preview.ts', "'This preview does not reproduce exactly what Teams draws. The final check is a test in Teams.'", "'This preview is exactly what Teams draws.'", 'the limits notice is wrong'],
+    ['src/view/preview.ts', 'const pixels = accent ? flattenOnAccent(color.png.rgba, accent) : color.png.rgba;', 'const pixels = color.png.rgba;', 'the icon is not laid on the accent colour'],
+    ['src/view/preview.ts', 'mask[i + 3] = outline.png.rgba[i + 3]!;', 'mask[i + 3] = 255;', 'the outline shape is lost'],
+    ['src/view/preview.ts', "for (const theme of ['light', 'dark'] as const) {", "for (const theme of ['light'] as const) {", 'only one app bar is drawn'],
+    ['src/view/preview.ts', "if (icon.path === null) return `The manifest does not declare the ${label}.`;", '', 'an undeclared icon gives no reason'],
+    ['src/view/checks.ts', 'indicator(c.verdict),', "indicator('pass'),", 'every check looks like a pass'],
+    ['src/view/loader.ts', "$('load-message-text').textContent = text ?? '';", "$('load-message-text').textContent = '';", 'a refusal has no text'],
+    ['src/view/loader.ts', "$('load-message-close').addEventListener('click', () => showMessage(null));", '', 'the message cannot be closed'],
+    ['src/view/preview.ts', "const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(text);", "const short = null as RegExpExecArray | null;", 'a shortened #fff colour is not read'],
+    ['src/view/preview.ts', "const fn = /^rgba?\\(", "const fn = /^rgbx?\\(", 'rgb() colours are not read'],
+    ['src/services/theme.ts', "set(theme === 'light')", 'set(true)', 'the theme is always light'],
+    ['src/services/theme.ts', "set(theme === 'light')", 'set(false)', 'the theme is always dark'],
+    ['src/styles.css', '--color-text-muted: #9d9d9d;', '--color-text-muted: #3a3a3a;', 'muted text unreadable in the dark theme'],
+    ['src/styles.css', '--color-text-muted: #5c5c5c;', '--color-text-muted: #c0c0c0;', 'muted text unreadable in the light theme'],
+    ['src/styles.css', '--color-error: #b10e1c;', '--color-error: #ffb0b0;', 'error text unreadable in the light theme'],
+    ['src/styles.css', 'overflow-y: auto;', 'overflow-y: visible;', 'the inner panel does not scroll'],
+    ['src/styles.css', '@media (max-width: 640px)', '@media (max-width: 6px)', 'no narrow-pane rule'],
+    ["src/view/steps.ts", "button.disabled = n > 1 && !loaded;", "button.disabled = false;", "steps open before a package is loaded"],
+    ["src/view/steps.ts", "if (next) next.disabled = !loaded;", "if (next) next.disabled = false;", "Next enabled with no package"],
+    ["src/view/steps.ts", "current = loaded ? step : 1;", "current = step;", "a later step opens with no package"],
+    ["src/view/steps.ts", "const step = Math.min(Math.max(n, 1), STEPS.length);", "const step = n;", "steps outside the range"],
+    ["src/view/steps.ts", "crumbs.hidden = current === 1;", "crumbs.hidden = false;", "breadcrumb shown on the first step"],
+    ["src/view/steps.ts", "const cls = n === active ? 'active' : n < active ? 'done' : '';", "const cls = n === active ? 'active' : '';", "done steps not marked"],
+    ["src/view/steps.ts", "n < active ? icon('check') : String(n)", "String(n)", "done steps show no tick"],
+    ["src/view/steps.ts", "goto(current + (nav.dataset.nav === 'next' ? 1 : -1));", "goto(current + 1);", "Back goes forward"],
+    ["src/view/steps.ts", "'aria-current': n === active ? 'step' : undefined,", "", "current step not announced"],
+    ["src/view/steps.ts", "{ id: 'preview', label: 'Preview' },\n    { id: 'checks', label: 'Checks' },", "{ id: 'checks', label: 'Checks' },\n    { id: 'preview', label: 'Preview' },", "steps in the wrong order"],
+    ["src/view/nameEditor.ts", "['DEV', 'TEST', 'UAT', 'STAGING', 'PREPROD', 'PROD']", "['DEV', 'UAT', 'TEST', 'STAGING', 'PREPROD', 'PROD']", "presets in another order"],
+    ["src/view/nameEditor.ts", "chip.classList.toggle('is-active', editable && chip.dataset.preset === shownValue.trim());", "chip.classList.toggle('is-active', false);", "the current chip is not marked"],
+    ["src/view/nameEditor.ts", "clearBtn.disabled = !editable || shownValue === '';", "clearBtn.disabled = false;", "Clear always enabled"],
+    ["src/view/nameEditor.ts", "chip.addEventListener('click', () => handler?.(name));", "", "chips do nothing"],
+    ["src/view/nameEditor.ts", "clearBtn.addEventListener('click', () => handler?.(''));", "", "Clear does nothing"],
+    ["src/view/summary.ts","fact('help-circle', 'Not recognised', m.unknownKeys.length ? chips(m.unknownKeys) : 'none'),","fact('help-circle', 'Not recognised', 'none'),","unknown entries are not shown"],
+    ["src/view/summary.ts","fact('alert-triangle', 'Missing', m.missingKeys.length ? chips(m.missingKeys, 'warning') : 'none'))),","fact('alert-triangle', 'Missing', 'none'))),","missing entries are not shown"],
+    ["src/view/summary.ts","if (!entry) return el('span', {}, chip('declared, but not in the package', 'error'), path);","if (!entry) return el('span', {}, chip('in the package', 'success'), path);","an absent icon looks present"],
+    ["src/view/summary.ts","if (HEX6.test(accent)) swatch.style.backgroundColor = accent;","","the accent colour has no swatch"],
+    ["src/view/checks.ts","if (fail > 0) return chip(`${fail} failed`, TONE.fail);","if (fail > 0) return chip(`${fail} failed`, TONE.pass);","a failing group looks fine"],
+    ["src/view/checks.ts","if (items.length === 0) continue;","","empty groups get a card"],
+    ["src/view/card.ts","const cell = value === null\n        ? el('div', { class: `fact-value ${o.missing ? 'is-missing' : 'is-none'}` }, o.missing ? 'missing' : 'not declared')","const cell = value === null\n        ? el('div', { class: `fact-value ${o.missing ? 'is-missing' : 'is-none'}` }, 'not declared')","a missing entry says \"not declared\""],
+    ["src/icons.ts","const VERDICT_ICON: Record<Verdict, IconName> = { pass: 'check-circle', warning: 'alert-triangle', fail: 'x-circle' };","const VERDICT_ICON: Record<Verdict, IconName> = { pass: 'check-circle', warning: 'check-circle', fail: 'x-circle' };","a warning looks like a pass"],
+    ["src/services/safeArea.ts","x < left + safe && y >= top","x <= left + safe && y >= top","the safe area is one pixel too wide"],
+    ["src/services/safeArea.ts","y < top + safe) continue;","y <= top + safe) continue;","the safe area is one pixel too tall"],
+    ["src/services/safeArea.ts","const left = Math.floor((width - safe) / 2);","const left = Math.ceil((width - safe) / 2);","the safe area margin rounds the wrong way"],
+    ["src/services/safeArea.ts","const TOLERANCE = 8;","const TOLERANCE = 9;","background noise tolerance too loose"],
+    ["src/services/safeArea.ts","const TOLERANCE = 8;","const TOLERANCE = 7;","background noise tolerance too tight"],
+    ["src/services/safeArea.ts","const isLogo = a0 === 0","const isLogo = a0 < 255","a translucent corner is treated as transparent"],
+    ["src/services/safeArea.ts","? rgba[i + 3]! > 0","? rgba[i + 3]! > 1","a nearly transparent logo pixel is ignored"],
+    ["src/services/checks.ts","outside === 0 ? 'pass' : 'warning'","'pass'","a logo outside the safe area passes"],
+    ["src/services/checks.ts","${outside === 1 ? 'pixel' : 'pixels'}","pixels","one pixel is called pixels"],
+    ["src/services/checks.ts","if (icon.png?.kind === 'ok' && sized) {","if (icon.png?.kind === 'ok') {","the safe area is checked on icons of the wrong size"],
+    ["src/services/limits.ts","COLOR_SAFE_AREA_SIDE = 120","COLOR_SAFE_AREA_SIDE = 121","safe area side moved"],
+    ["src/services/report.ts","return `${packageName.replace(/\\.zip$/i, '')}-checks.json`;","return `${packageName.replace(/\\.zip$/, '')}-checks.json`;","upper-case .ZIP kept in the report name"],
+    ["src/services/report.ts","fail: count('fail') }","fail: count('warning') }","the report counts warnings as failures"],
+    ["src/services/report.ts","export const reportText = (r: Report): string => `${JSON.stringify(r, null, 2)}\\n`;","export const reportText = (r: Report): string => JSON.stringify(r);","the report is not indented"],
+    ["src/view/contents.ts", "const changed = (e.path === 'manifest.json' && manifestChanged) || replaced;", "const changed = plan.changed;", "every file is marked changed"],
+    ["src/view/contents.ts","const files = ctx.pkg.entries.filter(e => !e.isDirectory);","const files = ctx.pkg.entries;","folders are listed as files"],
+    ["src/view/contents.ts", "`${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`", "items.join(', ')", "the note lists the fields differently"],
+    ["src/app.ts","$(id).replaceChildren();","void id;","a removed package stays in the hidden steps"],
+    ["src/app.ts","const ok = await copyText(button.dataset.copy ?? '');","const ok = await copyText('');","the copy button copies nothing"],
+    ["src/app.ts","state.reportStatus = ok ? 'Report copied.' : 'The report could not be copied.';","state.reportStatus = 'Report copied.';","a failed copy of the report says it worked"],
+    ["src/view/loader.ts","$('drop-area').hidden = fileName !== null;","$('drop-area').hidden = false;","the empty area stays when a package is loaded"],
+    ["src/view/loader.ts","$('file-bar').hidden = fileName === null;","$('file-bar').hidden = false;","the file bar shows with nothing loaded"],
+    ["src/view/loader.ts","$('remove-btn').addEventListener('click', h.onRemove);","","the Remove button does nothing"],
+    ["src/view/loader.ts","$('replace-btn').addEventListener('click', h.onOpen);","","the Replace button does nothing"],
+    ["src/view/loader.ts","const area = $('loader');","const area = $('drop-area');","a file dropped on the loaded bar is ignored"],
+    ["src/view/preview.ts","for (const side of [192, 96, 48, 32]) {","for (const side of [192, 48]) {","the icon is shown at fewer sizes"],
+    ["src/view/preview.ts","showSafeArea = !showSafeArea;","showSafeArea = true;","the safe-area guide cannot be turned off"],
+    ["src/view/preview.ts","let showSafeArea = false;","let showSafeArea = true;","the safe-area guide starts on"],
+    ["src/view/card.ts","title: `Copy ${label}` }, icon('copy', 'icon--sm'));","title: `Copy ${label}` }, icon('check', 'icon--sm'));","the copy button shows a tick from the start"],
+    ["src/view/environment.ts","download.disabled = selected === null || st.downloading;","download.disabled = selected === null;","Download stays on while it runs"],
+    ["src/view/environment.ts","$<HTMLButtonElement>('env-refresh-btn').disabled = busy;","$<HTMLButtonElement>('env-refresh-btn').disabled = false;","Refresh stays on while it reads"],
+    ["src/view/environment.ts","if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(); }","if (e.key === 'Enter') { e.preventDefault(); onPick(); }","Space does not pick a row"],
+    ["src/view/environment.ts","c.enabledForPowerPlatformAPI === false ? chip('Not enabled for the Power Platform API', 'warning') : null","c.enabledForPowerPlatformAPI !== undefined ? chip('Not enabled for the Power Platform API', 'warning') : null","a warning for every connection that says anything"],
+    ["src/view/environment.ts","g.isManaged ? 'neutral' : 'info'","g.isManaged ? 'info' : 'neutral'","managed and unmanaged chips swapped"],
+    ["src/view/environment.ts","$('env-spinner').hidden = !busy;","$('env-spinner').hidden = true;","no sign that it is reading"],
+    ["src/view/environment.ts", "st.downloading ? 'Downloading…' : selected", "selected", "the button does not say it is busy"],
+    ["src/view/environment.ts","browser.hidden = !st.connection;","browser.hidden = false;","tables shown with no connection"],
+    ["src/services/edit/fields.ts", "if (value.length > f.max)", "if (value.length >= f.max)", "a value at its limit is refused"],
+    ["src/services/edit/fields.ts", "/^#[0-9a-fA-F]{6}$/;", "/^#[0-9a-fA-F]{3,6}$/;", "a short hex colour is accepted"],
+    ["src/services/edit/fields.ts", "/^\\d+\\.\\d+\\.\\d+(?:-", "/^\\d+\\.\\d+(?:\\.\\d+)?(?:-", "a two-number version is accepted"],
+    ["src/services/edit/fields.ts", "if (!/^https:\\/\\//i.test(value)) return 'A link must start with https://.';", "if (!/^https?:\\/\\//i.test(value)) return 'A link must start with https://.';", "an http link is accepted"],
+    ["src/services/edit/fields.ts", "if (/\\s/.test(value)) return 'A link cannot contain spaces.';", "", "a link with a space is accepted"],
+    ["src/services/edit/fields.ts", "[major, minor + 1, 0]", "[major, minor + 1, patch]", "Bump minor keeps the patch number"],
+    ["src/services/edit/fields.ts", "const SEGMENT_MAX = 99999;", "const SEGMENT_MAX = 999999;", "a version number may grow to six digits"],
+    ["src/services/edit/fields.ts", "if (v.includes('://'))", "if (false)", "a scheme is accepted in a valid domain"],
+    ["src/services/edit/fields.ts", "e.toLowerCase() === v.toLowerCase()", "e === v", "a domain duplicate is case sensitive"],
+    ["src/services/edit/fields.ts", "if (fixed.length < 2)", "if (fixed.length < 1)", "a one-part domain is accepted"],
+    ["src/services/edit/fields.ts", "if (wildcard && /(^|\\.)onmicrosoft\\.com$/i.test(v))", "if (false)", "*.onmicrosoft.com is accepted"],
+    ["src/services/edit/fields.ts", "if (existing.length >= DOMAIN_MAX_ITEMS)", "if (existing.length > DOMAIN_MAX_ITEMS)", "the 101st domain is accepted"],
+    ["src/services/edit/fields.ts", "if (existing.includes(value)) return 'This permission is already in the list.';", "", "a permission is added twice"],
+    ["src/services/edit/jsonPatch.ts", "return splice(text, last.valueEnd, last.valueEnd,", "return splice(text, last.valueEnd + 1, last.valueEnd + 1,", "an inserted member lands after the wrong character"],
+    ["src/services/edit/jsonPatch.ts", "if (index < n - 1) return splice(text, m.keyStart, obj.members[index + 1]!.keyStart, '');", "if (index < n - 1) return splice(text, m.keyStart, m.valueEnd, '');", "removing a member leaves its comma"],
+    ["src/services/edit/jsonPatch.ts", "return splice(text, obj.members[index - 1]!.valueEnd, m.valueEnd, '');", "return splice(text, m.keyStart, m.valueEnd, '');", "removing the last member leaves a comma"],
+    ["src/services/edit/jsonPatch.ts", "return JSON.stringify(JSON.parse(stripBom(after))) === JSON.stringify(expected);", "return true;", "the safety net accepts anything"],
+    ["src/services/edit/jsonPatch.ts", "if (doc.dups.has(first) ||", "if (false ||", "a repeated key is edited"],
+    ["src/services/edit/jsonPatch.ts", "if (first === undefined || op.path.length > 2)", "if (first === undefined)", "a path that is too deep is accepted"],
+    ["src/services/edit/jsonPatch.ts", "return verifyPatch(text, out, ops) ? { ok: true, text: out } : { ok: false, message: INTEGRITY };", "return { ok: true, text: out };", "patchText skips its own safety net"],
+    ["src/services/edit/jsonPatch.ts", "text.includes('\\r\\n') ? '\\r\\n' : '\\n'", "'\\n'", "line endings are not kept"],
+    ["src/services/edit/jsonPatch.ts", "    const old = text.slice(m.valueStart, m.valueEnd);\n    return { ok: true, text: splice(text, m.valueStart, m.valueEnd, render(value, l.indent, l, old.includes('\\n'))) };", "    return { ok: true, text: splice(text, m.valueStart, m.valueEnd, render(value, l.indent, l, true)) };", "a one-line array becomes multi-line"],
+    ["src/services/edit/edits.ts", "        if (v === (o.fields[f.path] ?? '')) continue;\n", "", "an edit equal to the original is kept"],
+    ["src/services/edit/edits.ts", "        if (isReadOnlyField(f.path, o)) continue;\n", "", "a localisation key can be edited"],
+    ["src/services/edit/edits.ts", "if (v === '' && !f.required) {", "if (v === '') {", "a required field can be removed"],
+    ["src/services/edit/edits.ts", "if (bad || known.has(item)) return;", "if (bad) return;", "an old entry is judged by today's rules"],
+    ["src/services/edit/edits.ts", "ops.push(list.length === 0 ? { path: [p], remove: true } : { path: [p], value: list });", "ops.push({ path: [p], value: list });", "an emptied list leaves an empty array"],
+    ["src/services/edit/edits.ts", "if (old && sameBytes(old, bytes)) continue;", "", "the same image counts as a change"],
+    ["src/services/edit/edits.ts", "const keys = [...Object.keys(b), ...Object.keys(a).filter(k => !(k in b))];", "const keys = Object.keys(b);", "a removed value is not in the diff"],
+    ["src/services/edit/edits.ts", "(b === null ? a.length === 0 :", "(b === null ? false :", "an empty list differs from a missing one"],
+    ["src/services/edit/iconEdit.ts", "if (width !== side || height !== side) {", "if (width !== side && height !== side) {", "a rectangle with one right side is accepted"],
+    ["src/services/edit/iconEdit.ts", "if (bytes.length > ICON_FAIL_BYTES) {", "if (bytes.length >= ICON_FAIL_BYTES) {", "an icon of exactly 100 KB is refused"],
+    ["src/services/edit/iconEdit.ts", "if (png.kind === 'corrupt')", "if (false)", "a damaged PNG is not refused"],
+    ["src/services/export.ts", "if (plan.blocking.length > 0 || plan.invalid.length > 0)", "if (plan.blocking.length > 0)", "invalid edits do not block the export"],
+    ["src/services/export.ts", "if (plan.text !== ctx.manifestText) replaced['manifest.json']", "if (false) replaced['manifest.json']", "the edited manifest is not written"],
+    ["src/services/export.ts", "for (const [path, data] of Object.entries(entries)) if (!kept.some(e => e.path === path)) kept.push({ path, data, isDirectory: false });", "", "an added icon is not seen by the checks"],
+    ["src/services/export.ts", "if (replaced[slot] && ctx.manifest.icons[slot] === null) ops.push(", "if (false) ops.push(", "a new icon is not declared in the manifest"],
+    ["src/services/export.ts", "const original = originalOf(base.plan.manifest);", "const original = originalOf(ctx.manifest);", "name edits are compared with the original, not with the suffixed names"],
+    ["src/services/export.ts", "invalid, changes, entries, iconChanges, icons,", "invalid: [], changes, entries, iconChanges, icons,", "invalid edits are not reported"],
+    ["src/services/zip.ts", "if (!pkg.entries.some(e => e.path === path)) out[path]", "if (false) out[path]", "a new entry is not added to the package"],
+    ["src/view/changes.ts", ".slice(0, SHORT - 1)", ".slice(0, SHORT)", "a shortened value is one character too long"],
+    ["src/view/changes.ts", "if (value === null) return el('td', { class: `chg-${kind} is-none` }", "if (false) return el('td', { class: `chg-${kind} is-none` }", "a removed value is shown as text"],
+    ["src/view/editor.ts", "b.disabled = !r.ok;", "b.disabled = false;", "Bump stays on for a version that cannot be raised"],
+    ["src/view/editor.ts", "$(`ed-row-${def.path}`)!.setAttribute('data-changed', String(changed));", "$(`ed-row-${def.path}`)!.setAttribute('data-changed', 'false');", "a changed field is not marked"],
+    ["src/view/editor.ts", "input.disabled = readOnly;", "input.disabled = false;", "a localisation key can be typed over"],
+    ["src/app.ts", "if (original === null) delete fields[path]; else fields[path] = original;", "delete fields[path];", "Revert on a name does not restore the original under a suffix"],
+    ["src/app.ts", "        state.typed = null;\n        state.iconMessage", "        state.iconMessage", "Revert all keeps the typed suffix"],
+    ["src/app.ts", "...shown.invalid.map(i => `${i.label}: ${i.message}`),", "", "the reason for a blocked save leaves out invalid fields"],
+    ["src/services/image/colour.ts", "return 100 * Math.sqrt(sq(a, b) / MAX_SQ);", "return Math.sqrt(sq(a, b) / MAX_SQ);", "the distance is not a percentage"],
+    ["src/services/image/colour.ts", "if (s.n > best.n) best = s;", "if (s.n >= best.n) best = s;", "a corner tie goes to the last corner"],
+    ["src/services/image/colour.ts", "if (background && distancePercentRaw(r, g, b, background) <= 8) continue;", "", "the background counts as the main colour"],
+    ["src/services/image/colour.ts", "if (p.data[i + 3]! < 200) continue;", "if (p.data[i + 3]! < 0) continue;", "transparent pixels count as the main colour"],
+    ["src/services/image/colour.ts", "0.587 * g", "0.5 * g", "wrong brightness weights"],
+    ["src/services/image/colour.ts", "const short = HEX3.exec(t);", "const short = null as RegExpExecArray | null;", "a three-digit hex is not read"],
+    ["src/services/image/ops.ts", "sq * 10000 <= percent * percent * MAX_SQ * (1 + 1e-12)", "sq * 10000 < percent * percent * MAX_SQ", "the limit of the tolerance is outside"],
+    ["src/services/image/ops.ts", "if (o.mode === 'everywhere') {", "if (o.mode === 'edges') {", "the two background modes are swapped"],
+    ["src/services/image/ops.ts", "            if (x > 0) seed(i - 1);\n", "", "the flood fill does not go left"],
+    ["src/services/image/ops.ts", "hard = step(hard, w, h, o.matte > 0);", "hard = step(hard, w, h, o.matte < 0);", "the matte grows when it should shrink"],
+    ["src/services/image/ops.ts", "((d - tol) / o.softness)", "((d - tol) / (o.softness + 1))", "the softness ramp is off"],
+    ["src/services/image/ops.ts", "if (x + w > p.width || y + h > p.height)", "if (x + w >= p.width || y + h >= p.height)", "a crop to the last column is refused"],
+    ["src/services/image/ops.ts", "if (w < 1 || h < 1)", "if (w < 0 || h < 0)", "an empty crop is accepted"],
+    ["src/services/image/ops.ts", "const s = (share / 100) * target / Math.max(p.width, p.height);", "const s = (share / 100) * target / Math.min(p.width, p.height);", "fit uses the shorter side"],
+    ["src/services/image/ops.ts", "tx = h - 1 - y; ty = x;", "tx = y; ty = w - 1 - x;", "a quarter turn goes the wrong way"],
+    ["src/services/image/ops.ts", "const tx = axis === 'h' ? p.width - 1 - x : x;", "const tx = axis === 'v' ? p.width - 1 - x : x;", "the flip axes are swapped"],
+    ["src/services/image/ops.ts", "if (out.data[i + 3]! > 0) { out.data[i] = colour.r;", "if (out.data[i + 3]! >= 0) { out.data[i] = colour.r;", "transparent pixels take the solid colour"],
+    ["src/services/image/ops.ts", "const f = (100 + o.contrast) / 100;", "const f = (100 - o.contrast) / 100;", "contrast goes the wrong way"],
+    ["src/services/image/ops.ts", "? (a >= o.cutoff ? a : 0)", "? (a > o.cutoff ? a : 0)", "the outline cutoff is exclusive"],
+    ["src/services/image/ops.ts", "out.data[i] = 255; out.data[i + 1] = 255; out.data[i + 2] = 255; out.data[i + 3] = alpha;", "out.data[i] = p.data[i]!; out.data[i + 1] = 255; out.data[i + 2] = 255; out.data[i + 3] = alpha;", "the outline keeps some colour"],
+    ["src/services/image/ops.ts", "if (transparent) return boundingBox(p, i => p.data[i + 3]! > 0);", "if (transparent) return boundingBox(p, i => p.data[i + 3]! > 0 || true);", "trim keeps everything"],
+    ["src/services/image/resample.ts", "f[i] = p.data[i]! * a / 255;", "f[i] = p.data[i]!;", "transparent pixels bleed their colour"],
+    ["src/services/image/resample.ts", "const A = Math.min(255, Math.floor(alpha + 0.5));", "const A = Math.min(255, Math.floor(alpha));", "alpha is truncated, not rounded"],
+    ["src/services/image/resample.ts", "const pos = (j + 0.5) * scale - 0.5;", "const pos = j * scale;", "enlarging is not centred"],
+    ["src/services/image/pipeline.ts", ".slice(-HISTORY_MAX);", ".slice(-HISTORY_MAX - 1);", "the history keeps one step too many"],
+    ["src/services/image/pipeline.ts", "const change = (pl: Pipeline, ops: Op[]): Pipeline => ({ ...pl, ops, undoStack: record(pl), redoStack: [] });", "const change = (pl: Pipeline, ops: Op[]): Pipeline => ({ ...pl, ops, undoStack: record(pl) });", "a new change keeps the redo steps"],
+    ["src/services/image/pipeline.ts", "export const SAFE_AREA_SHARE = 62.5;", "export const SAFE_AREA_SHARE = 60;", "the safe area share is wrong"],
+    ["src/services/image/pipeline.ts", "if (hasFlatBorder(source)) ops.push(defaultOp('removeBg', source, 192));", "ops.push(defaultOp('removeBg', source, 192));", "the preset always removes a background"],
+    ["src/services/image/pipeline.ts", "mode: hasAlpha(current) ? 'alpha' : 'brightness'", "mode: 'alpha'", "the outline mode ignores transparency"],
+    ["src/services/image/pipeline.ts", "return recordStep ? change(pl, ops) : { ...pl, ops };", "return change(pl, ops);", "every slider move is a history step"],
+    ["src/services/image/pipeline.ts", "export const reset = (pl: Pipeline): Pipeline => (pl.ops.length === 0 ? pl : change(pl, []));", "export const reset = (pl: Pipeline): Pipeline => ({ ...pl, ops: [] });", "Reset cannot be undone"],
+    ["src/services/image/pngWrite.ts", "header[9] = 6;", "header[9] = 2;", "the PNG is written as RGB"],
+    ["src/services/image/pngWrite.ts", "if (cost < bestCost)", "if (cost > bestCost)", "the worst filter is chosen"],
+    ["src/services/image/pngWrite.ts", "zlibSync(raw, { level: 9 })", "zlibSync(raw, { level: 0 })", "the PNG is not compressed"],
+    ["src/services/image/import.ts", "if (longer <= max) return { picture: p, reduced: false };", "if (longer < max) return { picture: p, reduced: false };", "a picture of exactly 1024 is reduced"],
+    ["src/services/image/import.ts", "if (bytes.length > PACKAGE_MAX_BYTES)", "if (bytes.length > PACKAGE_MAX_BYTES * 10)", "a huge file is read"],
+    ["src/services/image/import.ts", "if (format === 'png') {\n        const r = fromPng(bytes);", "if (false) {\n        const r = fromPng(bytes);", "a PNG goes to the window decoder"],
+    ["src/services/image/accept.ts", "if (bytes.length > ICON_FAIL_BYTES) {", "if (bytes.length > ICON_FAIL_BYTES * 10) {", "a heavy PNG is accepted"],
+    ["src/services/image/accept.ts", "if (isEmptyPicture(picture))", "if (false)", "an empty result is accepted"],
+    ["src/services/image/accept.ts", "return p.width === p.height ? resizePicture(p, target, target) : fit(p, target, 100);", "return resizePicture(p, target, target);", "a rectangle is stretched"],
+    ["src/view/imageEditor.ts", "if (w > 1 || h > 1) {", "if (true) {", "a click without a drag adds a crop"],
+    ["src/view/imageEditor.ts", "if (fx < 0 || fy < 0 || fx >= 1 || fy >= 1) return null;", "if (fx < 0 || fy < 0 || fx > 1 || fy > 1) return null;", "a point on the far edge is inside"],
+    ["src/view/imageEditor.ts", "if (last === undefined) addOp(", "if (true) addOp(", "the background colour is always a new step"],
+    ["src/view/imageEditor.ts", "speed.hidden = took <= SLOW_MS;", "speed.hidden = true;", "a slow change is not reported"],
+    ["src/view/imageEditor.ts", "for (const id of ['ie-send-bg', 'ie-send-solid', 'ie-send-fill', 'ie-send-accent']) ($(id) as HTMLButtonElement).disabled = r.a === 0;", "", "the send buttons stay on for a transparent pixel"],
+    ["src/view/imageEditor.ts", "($('ie-undo') as HTMLButtonElement).disabled = s.pipeline.undoStack.length === 0;", "($('ie-undo') as HTMLButtonElement).disabled = false;", "Undo is on with nothing to undo"],
+    ["src/view/imageEditor.ts", "if (!r.ok) { state.message = r.message; render(); return; }\n        const slot = state.slot;", "const slot = state.slot;", "Apply ignores a refusal"],
+    ["src/services/checks.ts", "seeThrough / pixels < SEE_THROUGH_SHARE", "seeThrough / pixels <= SEE_THROUGH_SHARE", "exactly a tenth see-through does not count"],
+    ["src/services/checks.ts", "r += px[i]! * a;", "r += px[i]!;", "the logo colour ignores alpha"],
+    ["src/services/image/colour.ts", "0.7152 * lin(g)", "0.5 * lin(g)", "wrong luminance weight for green"],
+    ["src/services/image/colour.ts", "(Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)", "(Math.min(a, b) + 0.05) / (Math.max(a, b) + 0.05)", "the contrast ratio is upside down"],
+    ["src/services/checks.ts", "if (!rgb || !png || png.kind !== 'ok') return null;", "if (!rgb || !png) return null;", "an unreadable icon is judged"],
+    ["src/view/checks.ts", "const open = c.verdict !== 'pass' || showDetails;", "const open = showDetails;", "a failing check hides its rule"],
+    ["src/view/checks.ts", "const open = c.verdict !== 'pass' || showDetails;", "const open = true;", "every check shows its rule"],
+    ["src/view/checks.ts", "showDetails = !showDetails;", "showDetails = showDetails;", "the button does nothing"],
+    ["src/view/checks.ts", "count('warning') > 0 ? chip(", "true ? chip(", "the strip always shows warnings"],
+    ["src/view/checks.ts", "count('fail') > 0 ? chip(", "true ? chip(", "the strip always shows failures"],
+    ["src/view/checks.ts", "detail('This does not prove', c.notProven)", "detail('This does not prove', '')", "what a check does not prove is left out"],
+    ["src/services/image/transparent.ts", "if (!hasFlatBorder(p)) {", "if (false) {", "a picture with no flat border is treated as having one"],
+    ["src/services/image/transparent.ts", "hasAlpha(p)\n                ?", "true\n                ?", "the reason does not tell see-through from not flat"],
+    ["src/services/image/transparent.ts", "const op = defaultOp('removeBg', p, 192) as RemoveBgOp;", "const op = { ...(defaultOp('removeBg', p, 192) as RemoveBgOp), mode: 'everywhere' as const };", "the background is taken from everywhere, logo included"],
+    ["src/services/image/transparent.ts", "hasAlpha(p) && !hasFlatBorder(p) ? { ok: true as const, picture: p } : makeTransparent(p)", "makeTransparent(p)", "a see-through icon is refused instead of coloured"],
+    ["src/services/image/transparent.ts", "picture: solid(base.picture, colour)", "picture: base.picture", "the logo is not coloured"],
+    ["src/app.ts", "fields: { ...e.fields, accentColor: '#FFFFFF' } }));\n    },\n    onIconTransparent", "fields: e.fields }));\n    },\n    onIconTransparent", "the accent colour stays when the logo stands alone"],
+    ["src/services/image/transparent.ts", "if (other === 0) return { ok: false, message: ALREADY_WHITE };", "if (false) return { ok: false, message: ALREADY_WHITE };", "a white shape is processed again"],
+    ["src/services/image/transparent.ts", "if (p.data[i + 3]! > 0 && (p.data[i] !== 255", "if (p.data[i + 3]! >= 0 && (p.data[i] !== 255", "see-through pixels count as not white"],
+    ["src/services/image/transparent.ts", "return { ok: true, picture: solid(p, { r: 255, g: 255, b: 255 }) };", "return { ok: true, picture: p };", "the shape is not made white"],
+    ["src/services/image/recommend.ts", "fromLogo && saturationOf(fromLogo) >= 0.2 ? fromLogo", "fromLogo && saturationOf(fromLogo) >= 0 ? fromLogo", "a white logo is taken as the brand colour"],
+    ["src/services/image/recommend.ts", "if (colourCount(framed) >= 2) {", "if (colourCount(framed) >= 1) {", "the design that keeps the colours is offered for one colour"],
+    ["src/services/image/recommend.ts", "{ kind: 'fit', target: 192, share: 62.5 }", "{ kind: 'fit', target: 192, share: 100 }", "the logo is not kept inside the safe area"],
+    ["src/services/image/recommend.ts", "const COMFORT_CONTRAST = 4.5;", "const COMFORT_CONTRAST = 3;", "the brand colour is only just readable"],
+    ["src/services/image/recommend.ts", "const tinted = solid(framed, brand);", "const tinted = framed;", "the coloured logo is not coloured"],
+    ["src/services/image/recommend.ts", "const white = solid(framed, WHITE);", "const white = framed;", "the white logo is not white"],
+];
+
+const only = process.argv[2];
+const originals = new Map();
+const restore = () => { for (const [file, text] of originals) writeFileSync(at(file), text); originals.clear(); };
+process.on('SIGINT', () => { restore(); process.exit(130); });
+process.on('SIGTERM', () => { restore(); process.exit(143); });
+
+const vitest = files => spawnSync('npx', ['vitest', 'run', '--bail', '1', ...files], { cwd: root, shell: true, encoding: 'utf8' });
+
+const results = [];
+for (const [file, from, to, why] of MUTATIONS) {
+    if (only && !file.includes(only) && !why.includes(only)) continue;
+    const original = readFileSync(at(file), 'utf8');
+    const found = typeof from === 'string' ? original.includes(from) : from.test(original);
+    if (!found) { results.push({ why, file, status: 'ANCHOR NOT FOUND' }); continue; }
+
+    originals.set(file, original);
+    try {
+        writeFileSync(at(file), original.replace(from, () => to));
+        const covering = COVER[file] ?? [];
+        let run = vitest(covering);
+        let status = run.status === 0 ? 'survived-in-subset' : 'killed';
+        if (status === 'survived-in-subset' && covering.length > 0) {
+            run = vitest([]);   // the whole suite, before calling it a survivor
+            status = run.status === 0 ? 'SURVIVED' : 'killed';
+        } else if (status === 'survived-in-subset') {
+            status = 'SURVIVED';
+        }
+        results.push({ why, file, status });
+    } finally {
+        restore();
+    }
+}
+
+const width = Math.max(...results.map(r => r.file.length), 10);
+for (const r of results) console.log(`${r.status.padEnd(17)} ${r.file.padEnd(width)}  ${r.why}`);
+const killed = results.filter(r => r.status === 'killed').length;
+const bad = results.filter(r => r.status !== 'killed');
+console.log(`\n${killed} of ${results.length} mutations killed.`);
+if (bad.length) {
+    console.log(`${bad.length} need attention (a survivor is a missing test; an unfound anchor means the source changed).`);
+    process.exit(1);
+}

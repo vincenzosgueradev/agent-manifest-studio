@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Artifact set prodotti dal tool: package di solution con dati del tenant, non sorgente.
+# Il nome e' `{Solution} {Versione} [{SUFFISSO}] - {AAAA-MM-GG hh-mm}`.
+* - 20??-??-?? ??-??/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.suo
+*.user
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Lock files (keep package-lock.json for reproducibility)
+# yarn.lock
+
+# Temp
+*.tmp
+*.temp
+
+# Real packages from a tenant must never be committed (fixtures are generated)
+test/**/*.zip
+scratch/
+
+# Local logs of long runs
+scratch-*.log
+
+# Leftovers of local runs
+-manifest*.zip
+scratch-*.mjs
+.claude/scheduled_tasks.lock
+.claude/settings.local.json

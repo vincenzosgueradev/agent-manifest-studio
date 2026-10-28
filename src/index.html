@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Manifest Studio</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="app-header" id="app-header">
+        <img class="header-logo" src="./logo.svg" alt="" width="24" height="24">
+        <span class="header-title">Agent Manifest Studio</span>
+        <span class="header-version" id="app-version"></span>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb" hidden></nav>
+
+        <!-- Step 1 -->
+        <div class="step-panel" id="step-package">
+            <div class="step-header step-header-row">
+                <div class="step-id"><span class="icon icon-package" aria-hidden="true"></span><h2 class="step-title">Teams app package</h2></div>
+                <div class="stepper-slot"></div>
+            </div>
+
+            <section class="panel" id="loader" aria-labelledby="loader-title">
+                <div class="panel-head">
+                    <h3 class="panel-heading card-title" id="loader-title"><span class="icon icon-archive icon--head" aria-hidden="true"></span>Package</h3>
+                    <span class="panel-sub">the zip you download from Copilot Studio</span>
+                </div>
+                <div class="panel-body">
+                    <div class="file-bar" id="file-bar" hidden>
+                        <span class="icon icon-archive file-bar-icon" aria-hidden="true"></span>
+                        <div class="file-bar-info">
+                            <span class="file-name" id="file-name"></span>
+                            <span class="file-meta" id="file-meta"></span>
+                        </div>
+                        <button type="button" class="btn btn--secondary btn--sm" id="replace-btn" title="Open another package"><span class="icon icon-folder icon--sm" aria-hidden="true"></span>Replace&hellip;</button>
+                        <button type="button" class="btn btn--secondary btn--sm btn--danger" id="remove-btn" title="Remove the package and start again" aria-label="Remove the package"><span class="icon icon-trash icon--sm" aria-hidden="true"></span>Remove</button>
+                    </div>
+                    <div class="drop-area" id="drop-area">
+                        <span class="icon icon-archive drop-icon" aria-hidden="true"></span>
+                        <div class="drop-content">
+                            <p class="drop-text" id="drop-text">
+                                Choose the Teams app package of an agent: the zip you download from Copilot
+                                Studio. It is read on this computer and never sent anywhere.
+                            </p>
+                            <div class="drop-actions">
+                                <button type="button" class="btn btn--primary" id="open-btn"><span class="icon icon-folder icon--sm" aria-hidden="true"></span>Open package&hellip;</button>
+                            </div>
+                        </div>
+                        <input type="file" id="file-input" accept=".zip,application/zip" hidden>
+                    </div>
+                    <div class="message message--error" id="load-message" role="alert" hidden>
+                        <span class="icon icon-x-circle" aria-hidden="true"></span>
+                        <span class="message-text" id="load-message-text"></span>
+                        <button type="button" class="btn btn--secondary btn--sm" id="load-message-close"><span class="icon icon-close icon--xs" aria-hidden="true"></span>Dismiss</button>
+                    </div>
+                </div>
+            </section>
+
+            <div class="info-grid" id="summary" hidden></div>
+
+            <div class="step-footer">
+                <button type="button" class="btn btn--primary" data-nav="next">Next <span class="icon icon-arrow-right icon--sm" aria-hidden="true"></span></button>
+            </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-panel" id="step-suffix" hidden>
+            <div class="step-header step-header-row">
+                <div class="step-id"><span class="icon icon-tag" aria-hidden="true"></span><h2 class="step-title">Details of the package</h2></div>
+                <div class="stepper-slot"></div>
+            </div>
+
+            <section class="panel" id="name-editor" aria-labelledby="name-title">
+                <div class="panel-head">
+                    <h3 class="panel-heading card-title" id="name-title"><span class="icon icon-tag icon--head" aria-hidden="true"></span>Suffix</h3>
+                    <span class="panel-sub">added in square brackets after the name</span>
+                </div>
+                <div class="panel-body" id="name-body"></div>
+            </section>
+
+            <div class="edit-groups" id="edit-groups"></div>
+
+            <div class="step-footer">
+                <button type="button" class="btn btn--secondary" data-nav="back"><span class="icon icon-arrow-left icon--sm" aria-hidden="true"></span> Back</button>
+                <button type="button" class="btn btn--primary" data-nav="next">Next <span class="icon icon-arrow-right icon--sm" aria-hidden="true"></span></button>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-panel" id="step-look" hidden>
+            <div class="step-header step-header-row">
+                <div class="step-id"><span class="icon icon-palette" aria-hidden="true"></span><h2 class="step-title">Colour and icons</h2></div>
+                <div class="stepper-slot"></div>
+            </div>
+
+            <div class="edit-groups" id="look-groups"></div>
+
+            <div class="step-footer">
+                <button type="button" class="btn btn--secondary" data-nav="back"><span class="icon icon-arrow-left icon--sm" aria-hidden="true"></span> Back</button>
+                <button type="button" class="btn btn--primary" data-nav="next">Next <span class="icon icon-arrow-right icon--sm" aria-hidden="true"></span></button>
+            </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-panel" id="step-preview" hidden>
+            <div class="step-header step-header-row">
+                <div class="step-id"><span class="icon icon-eye" aria-hidden="true"></span><h2 class="step-title">Preview</h2></div>
+                <div class="stepper-slot"></div>
+            </div>
+
+            <div id="preview">
+                <div class="preview-grid" id="preview-body"></div>
+                <div class="notice" id="preview-notice"></div>
+            </div>
+
+            <div class="step-footer">
+                <button type="button" class="btn btn--secondary" data-nav="back"><span class="icon icon-arrow-left icon--sm" aria-hidden="true"></span> Back</button>
+                <button type="button" class="btn btn--primary" data-nav="next">Next <span class="icon icon-arrow-right icon--sm" aria-hidden="true"></span></button>
+            </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="step-panel" id="step-checks" hidden>
+            <div class="step-header step-header-row">
+                <div class="step-id"><span class="icon icon-check" aria-hidden="true"></span><h2 class="step-title">Checks</h2></div>
+                <div class="stepper-slot"></div>
+            </div>
+
+            <section class="panel" id="checks" aria-labelledby="checks-title">
+                <div class="panel-head">
+                    <h3 class="panel-heading card-title" id="checks-title"><span class="icon icon-check icon--head" aria-hidden="true"></span>Automatic checks</h3>
+                    <div class="head-actions">
+                        <button type="button" class="btn btn--secondary btn--sm" id="copy-report-btn" title="Copy the report as JSON"><span class="icon icon-copy icon--sm" aria-hidden="true"></span>Copy report</button>
+                        <button type="button" class="btn btn--secondary btn--sm" id="save-report-btn" title="Save the report as a JSON file"><span class="icon icon-save icon--sm" aria-hidden="true"></span>Save report</button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <p class="visually-hidden" id="checks-summary" role="status"></p>
+                    <div id="checks-body"></div>
+                </div>
+            </section>
+            <p class="report-status" id="report-status" role="status" hidden></p>
+
+            <div class="step-footer">
+                <button type="button" class="btn btn--secondary" data-nav="back"><span class="icon icon-arrow-left icon--sm" aria-hidden="true"></span> Back</button>
+                <button type="button" class="btn btn--primary" data-nav="next">Next <span class="icon icon-arrow-right icon--sm" aria-hidden="true"></span></button>
+            </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="step-panel" id="step-save" hidden>
+            <div class="step-header step-header-row">
+                <div class="step-id"><span class="icon icon-download" aria-hidden="true"></span><h2 class="step-title">Save a new package</h2></div>
+                <div class="stepper-slot"></div>
+            </div>
+
+            <section class="panel" id="changes" aria-labelledby="changes-title">
+                <div class="panel-head">
+                    <h3 class="panel-heading card-title" id="changes-title"><span class="icon icon-list icon--head" aria-hidden="true"></span>Changes</h3>
+                    <span class="panel-sub">every value that differs from the package you opened</span>
+                </div>
+                <div class="panel-body panel-body--flush" id="changes-body"></div>
+            </section>
+
+            <section class="panel" id="contents" aria-labelledby="contents-title">
+                <div class="panel-head">
+                    <h3 class="panel-heading card-title" id="contents-title"><span class="icon icon-list icon--head" aria-hidden="true"></span>Contents of the new package</h3>
+                    <span class="panel-sub">what changes and what stays identical</span>
+                </div>
+                <div class="panel-body panel-body--flush" id="contents-body"></div>
+            </section>
+
+            <section class="panel" id="export" aria-labelledby="export-title">
+                <div class="panel-head">
+                    <h3 class="panel-heading card-title" id="export-title"><span class="icon icon-download icon--head" aria-hidden="true"></span>New package</h3>
+                    <span class="panel-sub">one file, saved on your computer</span>
+                </div>
+                <div class="panel-body" id="export-body"></div>
+            </section>
+
+            <div class="step-footer">
+                <button type="button" class="btn btn--secondary" data-nav="back"><span class="icon icon-arrow-left icon--sm" aria-hidden="true"></span> Back</button>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="./app.ts"></script>
+</body>
+</html>

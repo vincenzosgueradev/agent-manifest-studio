@@ -1,0 +1,62 @@
+{
+    "name": "@vincenzosgueradev/pptb-agent-manifest-studio",
+    "version": "0.1.0",
+    "displayName": "Agent Manifest Studio",
+    "description": "See how the icon and name of a Copilot Studio agent will look before you upload it. Reads the Teams app package, previews it, checks it and saves a copy with a new environment suffix. Works on a file, never on an environment.",
+    "type": "module",
+    "main": "index.html",
+    "icon": "dist/logo.svg",
+    "author": "Vincenzo Sguera",
+    "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "scripts": {
+        "build": "tsc && vite build",
+        "dev": "vite",
+        "dev-watch": "vite build --mode development --watch",
+        "preview": "vite preview",
+        "test": "vitest run",
+        "test:full": "cross-env TEST_FULL=1 vitest run",
+        "test:mutation": "node scripts/mutation-check.mjs",
+        "test:watch": "vitest",
+        "validate": "pptb-validate"
+    },
+    "devDependencies": {
+        "@pptb/types": "^1.2.0",
+        "@types/node": "^26.6.5",
+        "cross-env": "^10.1.0",
+        "jsdom": "^30.1.3",
+        "tsx": "^4.19.2",
+        "typescript": "^5.0.0",
+        "vite": "^8.0.3",
+        "vitest": "^5.0.5"
+    },
+    "files": [
+        "dist"
+    ],
+    "dependencies": {
+        "fflate": "0.8.2"
+    },
+    "contributors": [
+        {
+            "name": "Vincenzo Sguera"
+        }
+    ],
+    "keywords": [
+        "pptb",
+        "power-platform",
+        "copilot-studio",
+        "agents",
+        "teams",
+        "manifest",
+        "icon",
+        "preview"
+    ],
+    "configurations": {
+        "repository": "https://github.com/vincenzosgueradev/agent-manifest-studio",
+        "readmeUrl": "https://raw.githubusercontent.com/vincenzosgueradev/agent-manifest-studio/main/README.md",
+        "website": "https://github.com/vincenzosgueradev/agent-manifest-studio",
+        "category": "Copilot Studio"
+    }
+}
