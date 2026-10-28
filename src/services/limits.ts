@@ -44,8 +44,6 @@ export const PNG_MAX_SIDE = 4096;
 
 /** `developer.name`: "Maximum string length: 32" (schema v1.30, read on 2026-10-27). */
 export const DEVELOPER_NAME_MAX = 32;
-/** Developer links: "Maximum string length: 2048". */
-export const URL_MAX = 2048;
 /** `version`: "Maximum string length: 256". */
 export const VERSION_MAX = 256;
 /** `validDomains`: each item at most 2048 characters, at most 100 items. */

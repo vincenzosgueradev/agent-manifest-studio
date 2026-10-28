@@ -4,7 +4,7 @@ import { bumpVersion, DEVICE_PERMISSION_VALUES, FIELDS, PERMISSION_VALUES, valid
 
 const LIMITS: Array<[FieldPath, number, boolean]> = [
     ['name.short', 30, true], ['name.full', 100, false], ['description.short', 80, true], ['description.full', 4000, true],
-    ['developer.name', 32, true], ['developer.websiteUrl', 2048, true], ['developer.privacyUrl', 2048, true], ['developer.termsOfUseUrl', 2048, false],
+    ['developer.name', 32, true],
     ['accentColor', 7, true], ['version', 256, true],
 ];
 
@@ -39,13 +39,6 @@ describe('limits', () => {
         expect(validateField('developer.name', 'è'.repeat(32))).toBeNull();
         expect(validateField('developer.name', 'è'.repeat(33))).not.toBeNull();
     });
-});
-
-describe('links', () => {
-    const ok = ['https://example.com', 'https://example.com/a?b=c#d', 'HTTPS://EXAMPLE.COM', 'https://sub.example.co.uk:8443/p'];
-    const bad = ['http://example.com', 'example.com', 'ftp://x.test', 'https://', 'https:// x', 'https://exa mple.com', '//example.com', 'javascript:alert(1)', ' https://x.test'];
-    for (const v of ok) it(`accepts ${v}`, () => expect(validateField('developer.websiteUrl', v)).toBeNull());
-    for (const v of bad) it(`refuses "${v}"`, () => expect(validateField('developer.websiteUrl', v)).not.toBeNull());
 });
 
 describe('accent colour', () => {

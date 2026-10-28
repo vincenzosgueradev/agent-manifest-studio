@@ -47,7 +47,6 @@ describe('the editor cards', () => {
         await loaded();
         expect(field('description.short').value).toBe('Answers sales questions');
         expect(field('developer.name').value).toBe('Contoso');
-        expect(field('developer.websiteUrl').value).toBe('https://example.com');
         expect(field('accentColor').value).toBe('#07687d');
         expect(field('version').value).toBe('1.0.0');
         expect(field('name.short').value).toBe('Sales Helper [DEV]');
@@ -63,7 +62,7 @@ describe('the editor cards', () => {
 
     it('marks an optional field as optional in its label', async () => {
         await loaded();
-        expect(row('developer.termsOfUseUrl').querySelector('label')!.textContent).toBe('Terms of use (optional)');
+        expect(row('name.full').querySelector('label')!.textContent).toBe('Full name (optional)');
         expect(row('developer.name').querySelector('label')!.textContent).toBe('Developer name');
     });
 });
@@ -127,8 +126,6 @@ describe('validation says why, next to the field, and blocks the save', () => {
         ['description.short', 'x'.repeat(81), 'most allowed is 80'],
         ['description.full', '', 'cannot be empty'],
         ['developer.name', 'y'.repeat(33), 'most allowed is 32'],
-        ['developer.websiteUrl', 'http://insecure.test', 'https://'],
-        ['developer.privacyUrl', 'https://a b', 'spaces'],
         ['accentColor', '#12345', 'six hexadecimal'],
         ['version', 'one', 'major.minor.patch'],
     ];
@@ -508,8 +505,8 @@ describe('the Changes table and the contents', () => {
 
     it('a removed optional field is shown as removed', async () => {
         const ui = await loaded();
-        await ui.type('ed-developer.termsOfUseUrl', '');
-        const cell = document.querySelector('#changes-table tr[data-path="developer.termsOfUseUrl"] .chg-new') as HTMLElement;
+        await ui.type('ed-name.full', '');
+        const cell = document.querySelector('#changes-table tr[data-path="name.full"] .chg-new') as HTMLElement;
         expect(cell.textContent).toBe('removed');
     });
 });

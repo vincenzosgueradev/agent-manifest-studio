@@ -23,8 +23,8 @@ describe('normalise', () => {
         expect(n.lists).toEqual({});
     });
     it('an optional field the manifest lacks and the user left empty is no edit', () => {
-        const none = original({ omit: ['developer.termsOfUseUrl'] });
-        expect(normalise(edits({ fields: { 'developer.termsOfUseUrl': '' } }), none).fields).toEqual({});
+        const none = original({ omit: ['name.full'] });
+        expect(normalise(edits({ fields: { 'name.full': '' } }), none).fields).toEqual({});
     });
     it('a name that is a localisation key cannot be edited', () => {
         const keyed = original({ nameShort: '[[NAME_KEY]]' });
@@ -44,10 +44,10 @@ describe('normalise', () => {
 describe('opsFrom', () => {
     const o = original({});
     it('a valid field becomes a set, an emptied optional field a remove', () => {
-        const { ops, invalid } = opsFrom(edits({ fields: { version: '2.0.0', 'developer.termsOfUseUrl': '' } }), o);
+        const { ops, invalid } = opsFrom(edits({ fields: { version: '2.0.0', 'name.full': '' } }), o);
         expect(invalid).toEqual([]);
         // the order of the field table, not the order the edits were made
-        expect(ops).toEqual([{ path: ['developer', 'termsOfUseUrl'], remove: true }, { path: ['version'], value: '2.0.0' }]);
+        expect(ops).toEqual([{ path: ['name', 'full'], remove: true }, { path: ['version'], value: '2.0.0' }]);
     });
     it('an invalid field is reported and gives no operation', () => {
         const { ops, invalid } = opsFrom(edits({ fields: { accentColor: 'nope', version: '2.0.0' } }), o);

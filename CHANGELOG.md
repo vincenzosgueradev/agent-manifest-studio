@@ -31,7 +31,7 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 - A set of enterprise line icons used everywhere, and the logo of Agent Nameplate.
 - Cards and tables are full width, one under another, on every screen.
 - **Manifest editor**: step 2 is now Edit. Change the names, short and full description, developer name
-  and links, accent colour and version (with Bump patch and Bump minor), and replace the colour and outline icon with a PNG of the right size. Every field is
+  accent colour and version (with Bump patch and Bump minor), and replace the colour and outline icon with a PNG of the right size. Every field is
   validated as you type against the documented limits, marked when changed, and can be reverted one by
   one or all at once. The preview and the checks use your changes.
 - The Save step has a **Changes** table with every manifest value that differs (old and new) and every
@@ -65,6 +65,7 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 
 ### Changed
 
+- **Edit**: the developer links (Website, Privacy statement, Terms of use) are no longer editable; they are still shown in the Package step and kept exactly as they are in the saved package.
 - **Look page**: *Logo without background* is gone. *Make background transparent* stays.
 
 ### Removed

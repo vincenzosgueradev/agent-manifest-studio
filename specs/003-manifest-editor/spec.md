@@ -4,6 +4,8 @@
 
 **Created**: 2026-10-27
 
+**Amended 2026-10-28**: Website, Privacy statement and Terms of use are no longer editable (the three developer link fields were removed from the editor at the request of the user); the manifest keeps them untouched and the Package step still shows them.
+
 **Status**: Draft
 
 **Input**: User description: "Edit the manifest. Extend the step Suffix into an Edit step where the user changes every field of the Teams app manifest that is safe and meaningful to change for a Copilot Studio agent package, with live validation, and exports a package in which only the fields the user changed differ. Groups: identity (names with the suffix chips), descriptions, developer, look (accent colour, colour icon, outline icon), version, valid domains, permissions. Identity and structure fields (manifest version, app id, bots, agents, extensions) are shown and kept as they are. Per-field changed marker, Revert, Revert all, a Changes panel in the export step, export blocked while a field is invalid, and a safety net that proves that only edited fields differ."

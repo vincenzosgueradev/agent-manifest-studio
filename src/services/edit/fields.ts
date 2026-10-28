@@ -6,19 +6,19 @@
 
 import {
     DEVELOPER_NAME_MAX, DESC_FULL_MAX, DESC_SHORT_MAX, DEVICE_PERMISSIONS_MAX_ITEMS, DOMAIN_MAX, DOMAIN_MAX_ITEMS,
-    NAME_FULL_MAX, NAME_SHORT_MAX, PERMISSIONS_MAX_ITEMS, URL_MAX, VERSION_MAX,
+    NAME_FULL_MAX, NAME_SHORT_MAX, PERMISSIONS_MAX_ITEMS, VERSION_MAX,
 } from '../limits';
 
 export type FieldPath =
     | 'name.short' | 'name.full' | 'description.short' | 'description.full'
-    | 'developer.name' | 'developer.websiteUrl' | 'developer.privacyUrl' | 'developer.termsOfUseUrl'
+    | 'developer.name'
     | 'accentColor' | 'version';
 
 export type ListPath = 'validDomains' | 'permissions' | 'devicePermissions';
 
 export type IconSlot = 'color' | 'outline';
 
-export type FieldKind = 'text' | 'multiline' | 'url' | 'color' | 'version';
+export type FieldKind = 'text' | 'multiline' | 'color' | 'version';
 export type FieldGroup = 'identity' | 'descriptions' | 'developer' | 'look' | 'version';
 
 export interface FieldDef {
@@ -39,9 +39,6 @@ export const FIELDS: readonly FieldDef[] = [
     { path: 'description.short', label: 'Short description', group: 'descriptions', kind: 'text', max: DESC_SHORT_MAX, required: true },
     { path: 'description.full', label: 'Full description', group: 'descriptions', kind: 'multiline', max: DESC_FULL_MAX, required: true },
     { path: 'developer.name', label: 'Developer name', group: 'developer', kind: 'text', max: DEVELOPER_NAME_MAX, required: true },
-    { path: 'developer.websiteUrl', label: 'Website', group: 'developer', kind: 'url', max: URL_MAX, required: true, placeholder: 'https://' },
-    { path: 'developer.privacyUrl', label: 'Privacy statement', group: 'developer', kind: 'url', max: URL_MAX, required: true, placeholder: 'https://' },
-    { path: 'developer.termsOfUseUrl', label: 'Terms of use', group: 'developer', kind: 'url', max: URL_MAX, required: false, placeholder: 'https://' },
     { path: 'accentColor', label: 'Accent colour', group: 'look', kind: 'color', max: 7, required: true, placeholder: '#RRGGBB' },
     { path: 'version', label: 'App version', group: 'version', kind: 'version', max: VERSION_MAX, required: true, placeholder: '1.0.0' },
 ];
@@ -52,19 +49,6 @@ export const FIELD_BY_PATH: Readonly<Record<FieldPath, FieldDef>> =
 const HEX_COLOUR = /^#[0-9a-fA-F]{6}$/;
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
-/** An https URL with a host, no spaces. */
-function urlProblem(value: string): string | null {
-    if (/\s/.test(value)) return 'A link cannot contain spaces.';
-    if (!/^https:\/\//i.test(value)) return 'A link must start with https://.';
-    try {
-        const u = new URL(value);
-        if (u.hostname === '') return 'A link needs a host name after https://.';
-    } catch {
-        return 'This is not a valid link.';
-    }
-    return null;
-}
-
 /** Why the value cannot be written to the field, or `null` when it can. An empty optional field is valid. */
 export function validateField(path: FieldPath, value: string): string | null {
     const f = FIELD_BY_PATH[path];
@@ -72,7 +56,6 @@ export function validateField(path: FieldPath, value: string): string | null {
     if (value.length > f.max) return `${f.label} is ${value.length} characters; the most allowed is ${f.max}.`;
     if (f.kind === 'color') return HEX_COLOUR.test(value) ? null : 'The colour must be # followed by six hexadecimal digits, for example #07687d.';
     if (f.kind === 'version') return SEMVER.test(value) ? null : 'The version must be numbers like 1.2.3 (major.minor.patch).';
-    if (f.kind === 'url') return urlProblem(value);
     return null;
 }
 

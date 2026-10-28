@@ -19,7 +19,7 @@ a file and never touches an environment.
 2. The tool shows what is inside: names, descriptions, version, identifiers, accent colour, icons,
    permissions and valid domains. Anything missing or not recognised is named.
 3. **Details**: type a new suffix or press one of the usual names (DEV, TEST, UAT, STAGING, PREPROD,
-   PROD), and change the text of the app: names, descriptions, developer name and links, and the version
+   PROD), and change the text of the app: names, descriptions, developer name, and the version
    (with a bump helper). **Look**: the accent colour and the colour and outline icons. Each changed field
    is marked and can be reverted.
 4. Look at the preview of the colour icon on the accent colour, at several sizes and with its safe
