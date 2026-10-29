@@ -4,6 +4,10 @@
 
 **Created**: 2026-10-27
 
+**Amended 2026-10-29**: the tiles of the colour icon beside the working canvas (Q on line 42, user story 4 and FR-024) show the result **as it is**, on a chequerboard where it is see-through, and no longer "on the accent colour": Microsoft Learn does not say where Teams draws the accent colour (constitution 1.6.1). The canvas background switch (checker, accent colour, white, black; FR-025) stays: it is the user's own choice of view, not a claim about Teams. Test: `ui.image` ("draws the four Teams sizes as the result is", "an opaque result has no chequerboard").
+
+**Amended 2026-10-29 (feature 009)**: the editor is a workspace over the page (picture left, tools right, own title bar), *Edit image* opens it for the icon of its card, the pixel reader by numbers is gone, the four zoom buttons are a slider with Fit and 100 %, Ctrl and wheel zoom, Escape closes. Services, steps, presets and results are unchanged. The eyedropper (FR-021, user story 3 and its reading) was removed on the same day, and *Show original* shows the icon of the package as opened. Reset, Resize, Make white, Make black and the accent background of the canvas were removed as redundant, and each icon shows only its own quick button. The colour suggestion (*Suggest accent colour*, FR-022) was removed; each effect can be in the history once and some do not go together (sixth amendment of 009). See `specs/009-image-editor-workspace/`.
+
 **Status**: Draft
 
 **Input**: User description: "An advanced image editor for the two icons of the package, in the spirit of a desktop image editor but made for this one job: remove the background, make it transparent, crop and fit, change colours, pick colours from the image, and produce a Teams-ready colour icon and a white outline icon from any picture. Everything is done in the tool, on the user's computer, with undo, a before and after comparison and the real Teams-style preview next to it."

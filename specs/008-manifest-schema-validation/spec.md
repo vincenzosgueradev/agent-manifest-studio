@@ -100,3 +100,14 @@ Draft-04 semantics for the keywords listed, with these choices:
 - SC-002 For every bundled schema and every mutation of the matrix, the tool and `ajv` agree on valid or invalid, and on the set of paths and keywords blamed (leaf problems).
 - SC-003 `npm run test:mutation` kills the mutants of `validate.ts`, `index.ts` and the changed lines of the views.
 - SC-004 Not covered: whether Teams accepts the package (it validates more than the schema: icons, domains, store rules), and the look of the card in PPTB in both themes (manual).
+
+## Amendment 2026-10-29 - the card is in the Package step
+
+Asked by hand: the answer to "is my manifest valid?" belongs to the moment the package is loaded, not to the fifth step.
+
+- The **Manifest schema** card (`#schema`) moves from the Checks step to the **Package step**, directly under the Package card and above the App card (`#summary`). It is hidden while no package is loaded, shown as soon as one is, hidden again by Remove and shown again by the next package.
+- The Checks step keeps the **row** `schema.valid` (group "Manifest schema", note "details in the Package step") and the report keeps its `schema` section.
+- **FR-006** is amended accordingly: the card is a child of `#step-package`, its previous sibling is `#loader` and its next sibling is `#summary`.
+- **FR-016** The card is hidden (`hidden`) when no package is loaded and its body is empty then.
+
+Tests: `test/ui.schema.test.ts` ("is in the first step, between the Package card and the App card", "goes away with the package and comes back with the next one").

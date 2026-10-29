@@ -24,3 +24,13 @@
 | FR-005, FR-007, FR-008 | checks.ts, export.ts, fixes.ts, report.ts | ui.schema, fixes.test, report.test |
 | FR-006 | view/schemaCard.ts, index.html | ui.schema |
 | FR-009, FR-011 | styles.css, package.json | noNetwork, ui.theme |
+
+## Amendment 2026-10-29
+
+- [X] T014 Tests first: `test/ui.schema.test.ts` (place of the card, hidden without a package)
+- [X] T015 `index.html` (the card moves to `#step-package`, hidden), `schemaCard.ts` (shows and hides the section), `checks.ts` and `fixes.ts` (texts)
+- [X] T016 CHANGELOG, README, quickstart, contract
+
+| Requirement | Code | Test |
+|---|---|---|
+| FR-006 (amended), FR-016 | index.html, view/schemaCard.ts | ui.schema (place, hidden) |

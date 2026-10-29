@@ -91,7 +91,7 @@ gives the logo in colour and the accent colour white.
 ## Requirements
 
 - **FR-001** `#look-compare` is the first child of the Look step content, sticky at the top, with the rows Original and Now.
-- **FR-002** Each row shows: colour icon on the accent colour of that row, outline icon on a light bar and on a dark bar.
+- **FR-002** (amended by FR-015) Each row shows: colour icon as it is (see FR-015), with the accent colour as text, outline icon on a light bar and on a dark bar.
 - **FR-003** The Original row is drawn from the opened package and never changes while editing; the Now row from the plan.
 - **FR-004** Each of colour icon, outline icon and accent colour has a state `Unchanged` or `Changed` (compared with the opened package).
 - **FR-005** The Suggestions card is after the two icon cards and the image editor root; it is a grid of presets.
@@ -108,3 +108,32 @@ gives the logo in colour and the accent colour white.
 - SC-001 Every FR has a test in the traceability table of `tasks.md`; the palette oracle is written from the algorithm above with no code from `src/`.
 - SC-002 `npm run test:mutation` kills the mutants of `palette.ts`, `compare.ts` and the changed lines of `editor.ts`.
 - SC-003 Not covered: how the band, the gallery and the aligned rows look in PPTB pixels in both themes, and the real sticky behaviour in the host scroll container (manual checks).
+
+## Amendment 2026-10-29 - a see-through icon is shown alone
+
+Found by hand on 2026-10-29 (screenshot of the Look step) and in the admin center on 2026-10-28, where the list of agents showed a
+see-through icon with no accent-coloured tile behind it.
+
+- **Make background transparent** is a button that depends on the icon: when the icon is **already see-through** (no flat colour at the
+  edges to take away, and it has see-through pixels) the button is **disabled**, with the reason in its title, instead of staying
+  clickable and answering with a message; when the icon is **opaque with a flat background** the button is **highlighted** (it is the
+  action that the icon needs); in every other case (for example the edges are not one flat colour) it stays as it was and explains
+  itself when pressed.
+- A **see-through icon is never drawn on the accent colour** in the Look step: the colour icon card has no second picture "On the accent
+  colour" (the first picture, on a chequerboard, is the icon), and the **Now** and **Original** tiles of the band draw the icon as it is
+  on a chequerboard. The accent colour is still shown as text and saved; the card caption says that the picture is shown by itself and
+  that some places draw the accent colour behind it and some do not.
+- The **Preview step follows the same rule** (feature 001, FR-007 amended the same day): the colour icon is drawn as it is on a checkerboard, never on the accent colour, because Microsoft Learn does not say where Teams draws the accent colour (see the constitution, Verified Facts, 2026-10-29).
+
+### Requirements added
+
+- **FR-013** The button *Make background transparent* is disabled, with the message "The background is already see-through: there is no flat colour at the edges to take away." as its title, when the colour icon is already see-through; it carries the class `is-suggested` when the icon is opaque with a flat background; it follows the icon as it changes (a result of the button, a chosen PNG, Revert).
+- **FR-014** The colour icon card has no `ed-img-onaccent-color` picture; the caption of a see-through icon is "The chequered parts of the picture are see-through, so it is shown by itself. The accent colour #X is saved in the manifest; some places draw it behind the picture and some do not (the admin center list showed the picture alone, observed 2026-10-28)." and the caption of an opaque icon is unchanged.
+- **FR-015** The colour tile of the band is drawn from the pixels of the icon as they are (no flattening on the accent colour) and carries the class `ed-checker` when the icon has see-through pixels.
+
+Tests: `test/ui.look.test.ts` ("a see-through icon is shown alone", "Make background transparent follows the icon"), `test/ui.editor.test.ts` (caption).
+- The tiles of the colour icon in the **image editor** follow the same rule (feature 004, amended the same day).
+
+### Amendment 2026-10-29 (second)
+
+The quick fixes of the icon cards (*Make background transparent*, *Outline from this icon*, *Make the shape white*), the per-icon *Revert*, *Choose a PNG* and the preview colour were **removed**: the cards only have *Edit image* (feature 009, amendment four). FR-009 (rows Image and Quick fix), FR-010 (the button *Make background transparent* stays) and FR-013 (the state of that button) no longer apply; FR-014 and FR-015 (nothing drawn on the accent colour) still do.

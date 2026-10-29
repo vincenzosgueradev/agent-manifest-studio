@@ -42,7 +42,7 @@ interface SchemaReport { state: 'valid' | 'invalid' | 'no-schema'; version: stri
 
 ## UI
 
-Card `#schema` (in `#step-checks`, before `#checks`): head `Manifest schema`, chip `follows v1.19` / `N problems` / `not validated`.
+Card `#schema` (in `#step-package`, between `#loader` and `#summary`, `hidden` until a package is loaded): head `Manifest schema`, chip `follows v1.19` / `N problems` / `not validated`.
 Body `#schema-body`: strip with `#schema-version`, `#schema-url` + button `[data-copy]`, `#schema-checked`; notes `.sch-note`;
 groups `.sch-group[data-group]` (native `details`, open when it has problems) each with `.sch-problem` rows holding
 `.sch-path`, `.sch-message`, `.sch-line` for Expected / Found / Schema says, and `.sch-hint` for the suggestion.

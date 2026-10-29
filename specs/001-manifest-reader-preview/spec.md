@@ -6,6 +6,8 @@
 
 **Status**: Draft
 
+**Amended 2026-10-29**: (0) FR-007 changed, see below; (a) opening another step, with Back, Next, the stepper or the breadcrumb, starts at the top of the page and of that step, while editing inside a step never moves the page; (b) the Next button of the first step is hidden, not only disabled, until a package is loaded (tests `ui.scroll`, `ui.steps`).
+
 **Input**: User description: "The user loads a Copilot Studio agent Teams app package (manifest zip). The tool validates it, reads the manifest, shows all important information, shows an honest preview of icon and name, runs automatic checks, lets the user change the name suffix (for example [DEV] to [UAT] or [PROD]) and exports a new zip where only the name fields changed."
 
 ## Context
@@ -224,8 +226,10 @@ exactly the suffix.
 
 **Preview**
 
-- **FR-007**: The tool MUST show the colour icon as Teams shows it: laid on the accent colour, with
-  transparent areas taking that colour.
+- **FR-007** (amended 2026-10-29): The tool MUST show the colour icon as it is, on a checkerboard where it is
+  see-through, and MUST NOT lay it on the accent colour: the documentation does not say where, if anywhere, Teams draws
+  the accent colour behind a see-through icon. The caption says that the accent colour is saved and not drawn here.
+  (Before the amendment: "laid on the accent colour, with transparent areas taking that colour".)
 - **FR-008**: The tool MUST show the outline icon on a light and on a dark app bar.
 - **FR-009**: The tool MUST show the app name as the short name and as the full name.
 - **FR-010**: The preview MUST state next to it that the shown name is the Teams app name and not the

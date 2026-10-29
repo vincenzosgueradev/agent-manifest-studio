@@ -25,3 +25,15 @@
 ## Removed on 2026-10-28
 
 - The gallery of presets and everything that served it (`services/image/palette.ts`, `recommend.ts`, `darkenUntil`, `contrastOf`, the card, the styles and their tests and mutation entries). The tests of the band, the order of the cards and the aligned actions stay in `test/ui.look.test.ts`.
+
+## Amendment 2026-10-29
+
+- [X] T014 Tests first: `test/ui.look.test.ts` (button disabled / highlighted, no second picture, band tile alone) and the caption in `test/ui.editor.test.ts`
+- [X] T015 `transparent.ts` `transparentState`; `editor.ts` button state, caption, second picture removed; `compare.ts` tile drawn as it is; `styles.css` `.is-suggested`
+- [X] T016 CHANGELOG; mutation entries; gates
+
+| Requirement | Code | Test |
+|---|---|---|
+| FR-013 | services/image/transparent.ts `transparentState`, view/editor.ts | ui.look (button follows the icon) |
+| FR-014 | view/editor.ts | ui.look, ui.editor (caption) |
+| FR-015 | view/compare.ts | ui.look (band tile alone) |

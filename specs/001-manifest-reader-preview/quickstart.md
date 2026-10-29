@@ -43,7 +43,7 @@ Prepare a package: in Copilot Studio open a development agent, download its Team
 | # | Check | Expected | Result / date |
 |---|-------|----------|---------------|
 | 8 | Open the tool in PPTB, choose the package | summary shows names, descriptions, versions, ids, accent colour and icons; "not recognised" lists only real unknown keys | |
-| 9 | Look at the preview | colour icon on the accent colour; outline on a light and a dark bar; both notices visible | |
+| 9 | Look at the preview | colour icon as it is, see-through parts on a checkerboard (amended 2026-10-29); outline on a light and a dark bar; both notices visible | |
 | 10 | Compare the preview with the icon in Teams for the same agent | similar; any visible difference is noted in `research.md` §6 | |
 | 11 | Type `UAT` as suffix | both names end in `[UAT]` (or the typed suffix is appended); name checks update | |
 | 12 | Type 30 `x` characters | `name.short.length` fails, the export button is disabled and says why | |

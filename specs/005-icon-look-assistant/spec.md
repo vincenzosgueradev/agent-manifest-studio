@@ -4,6 +4,10 @@
 
 **Created**: 2026-10-28
 
+**Amended 2026-10-29 (second)**: the quick fixes of the cards (*Make background transparent*, *Make the shape white*) and the colour to try on the outline icon were removed from the cards; what they did is done in the image editor (specification 009).
+
+**Amended 2026-10-29**: FR-001 to FR-003 changed by feature 007: the button is disabled when the icon is already see-through (it no longer answers with a message), it is highlighted when the icon needs it, the second picture on the accent colour is gone and the caption of a see-through icon no longer says that Teams puts the accent colour behind it.
+
 **Superseded (2026-10-28)**: the suggestions (user story 4, FR-010 to FR-016) were removed from the tool; "Logo without background" (FR-004, FR-008 in part) was removed by feature 007.
 
 **Earlier note**: "Logo without background" (FR-004, FR-008 in part) was removed, the suggestions became a gallery of presets and moved below the icon cards.

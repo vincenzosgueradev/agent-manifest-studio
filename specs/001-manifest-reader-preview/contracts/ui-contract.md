@@ -11,7 +11,7 @@ width and height; scrolling belongs to the inner panel. All colours are CSS cust
 | Loader | `loader` | Button "Open package…", drop area, name of the loaded file, "Load another" when loaded. Empty state: says what a package is and where to get it |
 | Message | `load-message` | Refusal text with the cause (FR-002, FR-003); role `alert` |
 | Summary | `summary` | Definition list of every item of FR-004/FR-005; "not declared" and "not recognised" shown as words, not blanks |
-| Preview | `preview` | Colour icon on the accent colour (192 px and 48 px), outline icon on a light and a dark bar, short and full name. Fixed notice `preview-notice` with the two statements of FR-010 |
+| Preview | `preview` | Colour icon as it is, never on the accent colour (192 px and 48 px; amended 2026-10-29), outline icon on a light and a dark bar, short and full name. Fixed notice `preview-notice` with the two statements of FR-010 |
 | Name editor | `name-editor` | One input `suffix-input` labelled "Environment suffix"; separate display of base and suffix for each name; localisation keys shown as read-only with the reason (FR-030) |
 | Checks | `checks` | One row per check: round verdict indicator (CSS shape, never emoji), name, found value, rule; `notProven` in the row's details |
 | Export | `export` | Button `export-btn`, suggested file name, the list `export-remaining` of failures that stay, the reason when the button is disabled |

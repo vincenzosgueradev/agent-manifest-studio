@@ -4,7 +4,7 @@ Automatic: `npx tsc --noEmit`, `npm run build`, `npm test`, `npm run test:full`,
 
 Manual in PPTB:
 
-1. Open a package that Copilot Studio gave you: the Checks step shows the Manifest schema card with the version and "follows v..." or the problems.
+1. Open a package that Copilot Studio gave you: the Package step shows, right under the Package card and above the App card, the Manifest schema card with the version and "follows v..." or the problems. Remove the package: the card goes away.
 2. Open a package whose `manifest.json` you broke by hand (an unknown entry, a wrong type, a long name): each problem names its path, says what is wrong in plain words and what it expected.
 3. Open one with `manifestVersion` 1.18 or 1.31: the card says it is not validated and lists the bundled versions.
 4. Edit the short name to 31 characters: the card reacts at once.

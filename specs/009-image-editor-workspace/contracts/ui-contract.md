@@ -1,0 +1,12 @@
+# UI contract
+
+`#ie-card.ie-workspace` (child of `#image-editor-root`, `hidden` until opened, `role="dialog"`, `aria-label="Image editor"`):
+- `.ie-bar-top`: `h3` "Image editor", `#ie-title-note` ("colour icon, 192 x 192 pixels, from the current colour icon"), buttons `ie-open-other`, `ie-undo`, `ie-redo`, `ie-reset`, `ie-save-png`, then `ie-cancel`, `ie-apply`.
+- messages `ie-note`, `ie-message`, `ie-status`, `ie-speed`.
+- `.ie-body` > `.ie-left` (view bar `.ie-viewbar` with the background segments `ie-bg-*`, the zoom `ie-zoom-fit`, `ie-zoom` (slider), `ie-zoom-value`, `ie-zoom-100`, `ie-original`, `ie-pick`; the stage `#ie-stage` with `#ie-canvas`; `#ie-reading`; the strip `#ie-preview`) and `.ie-right` (Quick, Tools, Steps, Colour).
+Removed: `ie-pixel`, `ie-pick-x`, `ie-pick-y`, `ie-read`, `ie-zoom-200`, `ie-zoom-400`.
+Keys: `Escape` closes (Cancel); Ctrl + wheel on `#ie-stage` zooms.
+Amended 2026-10-29 (second): removed `ie-zoom-100`, `ie-pick`, `ie-reading*`, `ie-send-*`; added `ie-view-label` (in the stage, shown while the original is shown). The view bar is: backgrounds, zoom (Fit, slider, value), Show original.
+Amended 2026-10-29 (third): removed `ie-reset`, `ie-add-resize`, `ie-add-white`, `ie-add-black`, `ie-bg-accent`; `ie-preset-teams` is shown for the colour icon only and `ie-preset-outline` for the outline icon only.
+Amended 2026-10-29 (fifth): the workspace is the options bar `.ie-bar-top`, `.ie-main` (`.ie-toolbox`, `.ie-canvas-area` with `ie-ruler-h`, `ie-ruler-v`, `#ie-stage`, `#ie-grid-overlay`, `.ie-panels`) and the status bar `.ie-statusbar` (`ie-size`, `ie-pos`, the zoom group). New ids: `ie-grid`, `ie-grid-overlay`, `ie-safe`, `ie-ruler-h`, `ie-ruler-v`, `ie-size`, `ie-pos`. The zoom is 10 to 200.
+Amended 2026-10-29 (sixth): `.ie-main` is `.ie-toolbox` (groups `.ie-group[data-cat]`: quick, background, geometry, colour, outline, each with `h4.ie-cat` and `.ie-tools`), `.ie-center` (`.ie-canvas-area`, `#ie-preview`) and `.ie-panels` (the History: `#ie-ops`, `li.ie-op[data-kind][data-cat]`). New ids: `ie-revert-all`, `ie-add-fill`. Removed: `ie-accent-*`, `ie-tile-192`. The options bar order is: `ie-open-other`, `ie-save-png`, `ie-bg-*`, `ie-grid`, `ie-original`, then `ie-undo`, `ie-redo`, `ie-revert-all`, `ie-cancel`, `ie-apply`.
