@@ -11,7 +11,6 @@ import { icon, type IconName } from '../icons';
 import { problemsText, type Problem, type SchemaReport } from '../services/schema';
 import { plural } from '../services/plural';
 
-
 /** `developer.websiteUrl` belongs to `developer`, `bots[0].scopes` to `bots`, the root to `(manifest)`. */
 const groupOf = (p: Problem): string => /^[^.[]+/.exec(p.path)?.[0] ?? p.path;
 

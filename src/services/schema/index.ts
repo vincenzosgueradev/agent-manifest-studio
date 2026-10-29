@@ -65,7 +65,6 @@ export function validateManifestText(text: string): SchemaReport {
     return { state: result.problems.length === 0 ? 'valid' : 'invalid', version, url: schemaUrl(version), problems: result.problems, checked: result.checked, notes };
 }
 
-
 /** The one row of the automatic checks that stands for the whole schema: a warning at most, it never stops the save. */
 export function schemaCheck(r: SchemaReport): Check {
     const found = r.state === 'valid' ? `follows v${r.version}, ${r.checked} entries compared`

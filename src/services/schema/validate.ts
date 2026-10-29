@@ -92,7 +92,6 @@ const typeOf = (v: unknown): string => (v === null ? 'null' : Array.isArray(v) ?
 
 const article = (word: string): string => (/^[aeiou]/.test(word) ? 'an' : 'a');
 
-
 function show(value: unknown): string {
     const text = JSON.stringify(value) ?? String(value);
     return text.length > 80 ? `${text.slice(0, 77)}...` : text;
