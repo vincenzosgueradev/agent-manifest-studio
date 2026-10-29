@@ -646,6 +646,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
                     const v = f.get(op);
                     if (!focused) (input as HTMLInputElement).value = String(v);
                     const r = document.getElementById(`ie-op-${i}-${f.name}-range`) as HTMLInputElement | null;
+                    if (r && op.kind === 'crop') r.max = String(f.name === 'x' || f.name === 'w' ? state!.pipeline.source.width : state!.pipeline.source.height);   // a slider to 100000 would be useless: a crop lies inside the picture
                     if (r && document.activeElement !== r) r.value = String(v);
                 } else if (f.type === 'select') (input as HTMLSelectElement).value = f.get(op);
                 else if (f.type === 'toggle') input.setAttribute('aria-pressed', String(f.get(op)));
@@ -704,7 +705,8 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         // with `Fit` the canvas fills the area and the picture is centred in it
         const dx = r.width > 0 ? (r.width - width) / 2 : 0;
         const dy = r.height > 0 ? (r.height - height) / 2 : 0;
-        return { scale, width, height, viewLeft: r.left - s.left + dx, viewTop: r.top - s.top + dy };
+        // absolute children are placed from the padding edge, so the stage border is not part of the offset
+        return { scale, width, height, viewLeft: r.left - s.left - stage.clientLeft + dx, viewTop: r.top - s.top - stage.clientTop + dy };
     }
 
     function drawRuler(ruler: HTMLElement, horizontal: boolean, origin: number, scale: number, size: number): void {
@@ -764,8 +766,12 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
 
         $('ie-title-note').textContent = `${SLOT_TITLE[s.slot]}, ${s.target} x ${s.target} pixels, from ${s.name}`;
         const note = $('ie-note');
-        note.hidden = s.note === null;
-        note.textContent = s.note ?? '';
+        const src = s.pipeline.source;
+        // a picture smaller than the icon has to be enlarged, which blurs it: say so, whichever way it got here
+        const small = src.width < s.target || src.height < s.target ? `This picture is ${src.width} x ${src.height} pixels, smaller than the ${s.target} x ${s.target} icon, so it is enlarged and may look blurred. A larger picture gives a sharper icon.` : null;
+        const noteText = s.note ?? small;
+        note.hidden = noteText === null;
+        note.textContent = noteText ?? '';
         const message = $('ie-message');
         message.hidden = s.message === null;
         message.textContent = s.message ?? '';

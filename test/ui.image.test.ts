@@ -185,6 +185,18 @@ describe('the steps', () => {
     });
 });
 
+describe('every number of every step has a number box and a slider', () => {
+    it('matte, trim tolerance and the crop box get a slider that follows the number', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        for (const [add, ids] of [['removeBg', ['matte', 'tolerance', 'softness']], ['trim', ['tolerance']], ['crop', ['x', 'y', 'w', 'h']]] as const) {
+            await ui.click(`ie-add-${add}`);
+            const n = document.querySelectorAll('#ie-ops > li').length - 1;
+            for (const id of ids) expect(document.getElementById(`ie-op-${n}-${id}-range`), `${add}.${id}`).not.toBeNull();
+        }
+    });
+});
+
 describe('a step compacts to its head once another is open', () => {
     const isOpen = (i: number): boolean => $(`ie-op-${i}-toggle`).getAttribute('aria-expanded') === 'true';
     const bodyHidden = (i: number): boolean => ($(`ie-op-${i}-body`) as HTMLElement).hidden;

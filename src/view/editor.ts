@@ -118,6 +118,7 @@ function iconCard(slot: IconSlot): HTMLElement {
     const syncDismiss = el('button', { id: `ed-sync-dismiss-${slot}`, type: 'button', class: 'btn btn--secondary btn--sm' }, 'Not now');
     syncDismiss.addEventListener('click', () => handlers?.onSyncDismiss(slot));
     const syncRow = el('div', { class: 'ed-img-sync', id: `ed-img-sync-row-${slot}`, hidden: true },
+        el('p', { class: 'ed-sync-title', id: `ed-img-sync-title-${slot}` }),
         el('p', { class: 'ed-img-caption', id: `ed-img-sync-${slot}` }),
         el('div', { class: 'ed-img-actions' }, syncAccept, syncDismiss));
 
@@ -211,7 +212,8 @@ function updateIcon(slot: IconSlot, m: EditorModel): void {
     if (syncRow) {
         syncRow.hidden = suggestion === null;
         if (suggestion) {
-            $(`ed-img-sync-${slot}`)!.textContent = suggestion.text;
+            $(`ed-img-sync-title-${slot}`)!.textContent = suggestion.title;
+            $(`ed-img-sync-${slot}`)!.textContent = suggestion.detail;
             ($(`ed-sync-accept-${slot}`) as HTMLButtonElement).replaceChildren(icon('wand', 'icon--xs'), suggestion.acceptLabel);
         }
     }

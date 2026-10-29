@@ -13,7 +13,7 @@ export type Field =
     | { name: string; label: string; type: 'colour'; optional?: boolean; get: (o: Op) => Rgb | null; set: (o: Op, v: Rgb | null) => Op }
     | { name: string; label: string; type: 'toggle'; get: (o: Op) => boolean; set: (o: Op, v: boolean) => Op };
 
-export const num = (name: string, label: string, min: number, max: number, step = 1, range = false): ((key: string) => Field) =>
+export const num = (name: string, label: string, min: number, max: number, step = 1, range = true): ((key: string) => Field) =>
     key => ({ name, label, type: 'number', min, max, step, range, get: o => (o as unknown as Record<string, number>)[key]!, set: (o, v) => ({ ...o, [key]: v }) as Op });
 
 export const FIELDS: Record<OpKind, Field[]> = {

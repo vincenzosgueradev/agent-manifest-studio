@@ -6,6 +6,20 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 
 ## [Unreleased]
 
+### Fixed
+- The "Short and full name differ" warning now carries an "Advice" badge and a "Why only a warning" line that says Teams accepts identical names, saving is not blocked, and there is no automatic fix.
+
+- The suggestion to regenerate the outline icon (or rebuild the colour icon) is now a clear notice with a heading, a plain sentence saying what will be replaced and that Revert restores it, and an accent bar.
+- The image editor says when the picture is smaller than the icon and will be enlarged (it may look blurred).
+- "Short and full name differ" is now a warning, not a failure, when the two names are identical: Teams accepts identical names, so it no longer counts as a failed check.
+
+- In the image editor, a step's problem message (e.g. a crop outside the picture) is shown on its own line under the title instead of squeezing the title to one letter per line.
+
+- An empty "Not now" box with a blue sliver showed under every icon card even with no sync suggestion: the box's display rule overrode the hidden attribute. It now stays hidden until there is a suggestion.
+
+- Image editor: turning the grid on no longer shifts the picture to the left. With Fit the stage does not scroll,
+  and the grid is placed from the stage's padding edge, so it adds no scrollbar and lines up with the rulers.
+
 ### Added
 
 - **Two-way icon sync**: editing or replacing the colour icon offers, on the outline icon card, to regenerate the
@@ -90,6 +104,7 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 
 ### Fixed
 
+- In the image editor, every number of every step now has both a number box and a slider (Matte, the trim tolerance and the crop box had none); the crop sliders run over the size of the picture.
 - In the image editor, *Show original* showed no difference; it now draws the icon as it was in the package, with a label on the picture that says so (and "the same as now" when nothing differs).
 - In the image editor, *Fit* and *100 %* did the same thing; Fit now fills the area and the 100 % button is gone (the slider gives 100).
 - The image editor shows the result of a colour icon as it is, on a chequerboard where it is see-through, and no longer on the accent colour (the background switch of its canvas is unchanged).

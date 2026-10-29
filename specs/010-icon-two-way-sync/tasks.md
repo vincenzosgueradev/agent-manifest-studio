@@ -35,6 +35,7 @@
 | FR-007 | sync.ts `initSyncState` | image.sync, ui.sync (fresh package) |
 | FR-008 | app.ts `acceptSyncSuggestion` (reuses `acceptResult`'s empty/size refusal) | ui.sync |
 | FR-009 | sync.ts `suggestionFor` (`text`, `acceptLabel`) | image.sync |
+| FR-004 (hidden when none) | styles.css `.ed-img-sync[hidden]` | ui.workspace ("the CSS lets the hidden sync suggestion go") |
 
 ## Notes
 

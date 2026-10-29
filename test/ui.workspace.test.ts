@@ -393,6 +393,10 @@ describe('the grid (FR-021)', () => {
         expect($('ie-grid-overlay').hidden).toBe(true);
     });
 
+    it('with Fit the stage does not scroll, so the grid cannot add a scrollbar that moves the picture', () => {
+        expect(rule('.ie-stage:has(.ie-canvas.is-fit)')).toMatch(/overflow:\s*hidden/);
+    });
+
     it('the lines come from a colour of the theme', () => {
         expect(css).toMatch(/--grid-line:/);
         expect(rule('.ie-grid-overlay')).toMatch(/var\(--grid-line\)/);
@@ -572,6 +576,10 @@ describe('no redundant control (2026-10-29)', () => {
 
     it('the CSS lets the hidden quick button go', () => {
         expect(rule('.ie-tools .btn[hidden]')).toMatch(/display:\s*none/);
+    });
+
+    it('the CSS lets the hidden sync suggestion go (an empty "Not now" box showed with no suggestion)', () => {
+        expect(rule('.ed-img-sync[hidden]')).toMatch(/display:\s*none/);
     });
 });
 

@@ -648,9 +648,11 @@ body {
 .ed-img-caption { margin: 0; color: var(--color-text-muted); font-size: var(--fs-sm); }
 .ed-img-sync {
     display: flex; flex-direction: column; gap: var(--sp-2);
-    padding: var(--sp-3); border: 1px solid var(--color-border); border-radius: var(--radius);
+    padding: var(--sp-3); border: 1px solid var(--color-border); border-left: 4px solid var(--color-primary); border-radius: var(--radius);
     background: var(--color-surface-2);
 }
+.ed-img-sync[hidden] { display: none; }
+.ed-sync-title { margin: 0; font-weight: 600; color: var(--color-text-strong); }
 .ed-img-sync .ed-img-caption { color: var(--color-text-strong); }
 .export-reason.is-info { color: var(--color-text-muted); }
 .color-input.is-auto { opacity: 0.35; }
@@ -743,6 +745,8 @@ body {
     background-image: linear-gradient(45deg, var(--checker-b) 25%, transparent 25%, transparent 75%, var(--checker-b) 75%), linear-gradient(45deg, var(--checker-b) 25%, transparent 25%, transparent 75%, var(--checker-b) 75%);
     background-size: 16px 16px; background-position: 0 0, 8px 8px;
 }
+/* With Fit nothing scrolls: the grid must not add a scrollbar that narrows the canvas and moves the picture */
+.ie-stage:has(.ie-canvas.is-fit) { overflow: hidden; }
 .ie-stage[data-bg="white"] { background: var(--canvas-white); }
 .ie-stage[data-bg="black"] { background: var(--canvas-black); }
 .ie-canvas { image-rendering: pixelated; max-width: none; margin: auto; flex: none; }
@@ -813,6 +817,9 @@ body {
 .ie-op.is-open { border-color: var(--color-primary); }
 .ie-op-head { display: flex; align-items: center; gap: var(--sp-2); }
 .ie-op-toggle { flex: 1; display: flex; align-items: center; gap: var(--sp-2); min-width: 0; background: none; border: none; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.ie-op-toggle { flex-wrap: wrap; }
+.ie-op-problem { order: 9; flex: 0 0 100%; font-size: var(--fs-xs); }   /* its own line under the title, so a long message never squeezes the name to one letter per line */
+.ie-op-problem[hidden] { display: none; }
 .ie-op-head strong { flex: 1; min-width: 0; color: var(--color-text-strong); overflow-wrap: anywhere; }
 .ie-op-chevron { margin-left: auto; flex: none; transition: transform .15s ease; }
 .ie-op-toggle[aria-expanded="true"] .ie-op-chevron { transform: rotate(180deg); }
@@ -867,6 +874,7 @@ body {
 .chk-main { display: grid; grid-template-columns: 110px minmax(160px, 1fr) minmax(0, 1.3fr); gap: var(--sp-4); align-items: baseline; }
 .chk-main .col-status { display: inline-flex; align-items: center; gap: var(--sp-2); white-space: nowrap; }
 .chk-main .col-check { color: var(--color-text-strong); font-weight: 600; }
+.chk-main .col-check .chip { margin-left: var(--sp-2); font-weight: 400; }
 .chk-main .col-found { color: var(--color-text); min-width: 0; overflow-wrap: anywhere; }
 .chk-more { margin-top: var(--sp-2); margin-left: calc(110px + var(--sp-4)); display: flex; flex-direction: column; gap: var(--sp-1); }
 .chk-more[hidden] { display: none; }

@@ -44,7 +44,8 @@ describe('editing the colour icon directly', () => {
         const ui = await loaded();
         await editColorDirectly(ui);
         expect($('ed-img-sync-row-outline').hidden).toBe(false);
-        expect($('ed-img-sync-outline').textContent).toBe('The colour icon changed. Regenerate the outline icon to match its shape?');
+        expect($('ed-img-sync-title-outline').textContent).toBe('Outline icon is out of date');
+        expect($('ed-img-sync-outline').textContent).toMatch(/32 x 32 white outline.*Revert restores the original/);
         expect($('ed-sync-accept-outline').textContent).toContain('Regenerate');
         expect($('ed-img-sync-row-color').hidden).toBe(true);
     });
@@ -100,7 +101,8 @@ describe('editing the outline icon directly', () => {
         const ui = await loaded();
         await editOutlineDirectly(ui);
         expect($('ed-img-sync-row-color').hidden).toBe(false);
-        expect($('ed-img-sync-color').textContent).toBe('The outline icon changed. Build a colour icon from its shape, on #07687d?');
+        expect($('ed-img-sync-title-color').textContent).toBe('Colour icon is out of date');
+        expect($('ed-img-sync-color').textContent).toContain('on #07687d');
         expect($('ed-sync-accept-color').textContent).toContain('Build colour icon');
     });
 
