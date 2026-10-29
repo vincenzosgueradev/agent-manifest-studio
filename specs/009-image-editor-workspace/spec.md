@@ -204,3 +204,18 @@ Asked by hand: the tools on the left, separated by category with a title and ent
 Not covered by automatic tests: how the groups, the colours, the red of Revert all and the strip look in PPTB in both themes (manual checks 10 to 12).
 
 Tests: `test/image.rules.test.ts`, `test/ui.workspace.test.ts` ("the toolbox by category", "Undo, Redo and Revert all", "each effect once", "the history and the result in the centre", "the colour section is gone"), `test/image.pipeline.test.ts` (reset), `test/ui.image.test.ts`.
+
+## Amendment 2026-10-29 (seventh) - the zoom, in one place
+
+Asked by hand: the status bar held a second zoom control (Fit, the slider, the value) that repeated the Fit and the `+` / `-` buttons already floating over the canvas; the two disagreed on where Fit sits. The slider is removed; Fit joins the steppers.
+
+- The **zoom** is one panel, `.ie-zoom-float`, over the canvas (bottom right): **Fit**, then `-`, the **value** and `+`, in that order. The slider (`ie-zoom`) is gone: the steppers already reach every step of the range, ten per cent at a time.
+- The **status bar** keeps only the size and the pointer position; the zoom group it used to hold is gone.
+
+### Requirements changed or added
+
+- **FR-006** (amended again) The zoom has no slider: Fit (`ie-zoom-fit`), the steppers (`ie-zoom-out-float`, `ie-zoom-in-float`) and the value (`ie-zoom-value`) are one panel over the canvas, `.ie-zoom-float`. `ie-zoom-out-float` disables at 10 %, `ie-zoom-in-float` at 200 %.
+- **FR-015** (amended) The zoom still goes from 10 to 200 in steps of 10, but by the steppers, not by a slider; the wheel with Ctrl stops at 10 and at 200, as before.
+- **FR-019** (amended) The status bar has `ie-size`, `ie-pos` and the spacer, in that order; the zoom is no longer part of it.
+
+Tests: `test/ui.workspace.test.ts` ("the zoom" describe block, status bar), `test/ui.image.test.ts`.
