@@ -4,14 +4,11 @@
  */
 
 import { applyTheme, onSettingsChange } from './services/theme';
-import { copyText, hasHostFiles, pickImage, pickPackage, pickPng, readFileObject, savePackage, savePngFile, saveText } from './services/files';
+import { copyText, hasHostFiles, pickImage, pickPackage, readFileObject, savePackage, savePngFile, saveText } from './services/files';
 import { readPackage } from './services/zip';
 import { exportPackage, makeContext, planEdits, suggestFileName, type EditContext, type Plan } from './services/export';
 import { EMPTY, originalOf, type Edits } from './services/edit/edits';
 import { checkNewIcon } from './services/edit/iconEdit';
-import { makeTransparent, whiteShape } from './services/image/transparent';
-import { acceptResult } from './services/image/accept';
-import { decodePng } from './services/png';
 import { renderCompare, resetCompare } from './view/compare';
 import { validateManifestText, type SchemaReport } from './services/schema';
 import { renderSchema, resetSchema } from './view/schemaCard';
@@ -325,9 +322,12 @@ function iconBytes(slot: IconSlot): Uint8Array | null {
 const imageEditor = initImageEditor({
     root: () => document.getElementById('image-editor-root'),
     currentIcon: iconBytes,
+    originalIcon: slot => {
+        const path = state?.ctx.manifest.icons[slot] ?? null;
+        return path === null ? null : state!.ctx.pkg.entries.find(e => e.path === path && !e.isDirectory)?.data ?? null;
+    },
     accent: () => (state ? currentView(state).shown.manifest.accentColor : null),
     onApply: (slot, bytes) => acceptIcon(slot, bytes),
-    onAccent: hex => edit(e => ({ ...e, fields: { ...e.fields, accentColor: hex } })),
     pickImage,
     hasHostFiles,
     savePng: savePngFile,
@@ -351,51 +351,7 @@ initEditor({
         state.iconMessage = { color: null, outline: null };
         edit(() => EMPTY);
     },
-    onIconPick: slot => {
-        if (!hasHostFiles()) { document.getElementById(`ed-img-file-${slot}`)?.click(); return; }
-        void pickPng(slot === 'color' ? 'Choose the colour icon (192 x 192 PNG)' : 'Choose the outline icon (32 x 32 PNG)')
-            .then(f => { if (f) acceptIcon(slot, f.bytes); })
-            .catch(e => { if (state) { state.iconMessage = { ...state.iconMessage, [slot]: `The file could not be opened: ${e instanceof Error ? e.message : String(e)}` }; render(); } });
-    },
-    onIconFile: (slot, file) => {
-        void readFileObject(file)
-            .then(f => acceptIcon(slot, f.bytes))
-            .catch(e => { if (state) { state.iconMessage = { ...state.iconMessage, [slot]: `The file could not be read: ${e instanceof Error ? e.message : String(e)}` }; render(); } });
-    },
-    onIconEdit: (slot, preset) => imageEditor.open(slot, preset),
-    onIconWhite: () => {
-        if (!state) return;
-        const bytes = iconBytes('outline');
-        const png = bytes ? decodePng(bytes) : null;
-        const fail = (message: string): void => { state!.iconMessage = { ...state!.iconMessage, outline: message }; render(); };
-        if (!png || png.kind !== 'ok') { fail('The outline icon cannot be read as a picture.'); return; }
-        const made = whiteShape({ width: png.header.width, height: png.header.height, data: png.rgba });
-        if (!made.ok) { fail(made.message); return; }
-        const out = acceptResult(made.picture, png.header.width);
-        if (!out.ok) { fail(out.message); return; }
-        acceptIcon('outline', out.bytes);
-    },
-    onIconTransparent: slot => {
-        if (!state) return;
-        const bytes = iconBytes(slot);
-        const png = bytes ? decodePng(bytes) : null;
-        const fail = (message: string): void => { state!.iconMessage = { ...state!.iconMessage, [slot]: message }; render(); };
-        if (!png || png.kind !== 'ok') { fail('The colour icon cannot be read as a picture, so its background cannot be taken away.'); return; }
-        const made = makeTransparent({ width: png.header.width, height: png.header.height, data: png.rgba });
-        if (!made.ok) { fail(made.message); return; }
-        const out = acceptResult(made.picture, png.header.width);
-        if (!out.ok) { fail(out.message); return; }
-        acceptIcon(slot, out.bytes);
-    },
-    onIconRevert: slot => {
-        if (!state) return;
-        state.iconMessage = { ...state.iconMessage, [slot]: null };
-        edit(e => {
-            const icons = { ...e.icons };
-            delete icons[slot];
-            return { ...e, icons };
-        });
-    },
+    onIconEdit: slot => imageEditor.open(slot),
 });
 onSuffixInput(value => {
     if (!state) return;

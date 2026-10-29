@@ -23,7 +23,7 @@ const groups = (): string[] => [...document.querySelectorAll('#schema-body .sch-
 describe('a manifest that follows its schema', () => {
     it('says so, with the version, the address and how much was compared', async () => {
         await loaded();
-        expect($('schema').closest('#step-checks')).not.toBeNull();
+        expect($('schema').closest('#step-package')).not.toBeNull();
         expect(text('schema-headline')).toBe('The manifest follows schema v1.19');
         expect(text('schema-version')).toBe('v1.19');
         expect(text('schema-url')).toBe(URL19);
@@ -41,10 +41,26 @@ describe('a manifest that follows its schema', () => {
         expect(text('schema-proof')).toContain('Teams');
     });
 
-    it('is before the automatic checks in the same step', async () => {
-        await loaded();
-        const order = [...document.querySelectorAll('#step-checks > section')].map(s => s.id);
-        expect(order.indexOf('schema')).toBeLessThan(order.indexOf('checks'));
+    it('is in the first step, between the Package card and the App card, as soon as the package is loaded', async () => {
+        const ui = await boot();
+        expect($('schema').hidden).toBe(true);                                        // nothing loaded: nothing to show
+        await ui.open('Sales.zip', packageBytes());
+        expect($('schema').hidden).toBe(false);
+        const order = [...document.querySelectorAll('#step-package > section, #step-package > .info-grid')].map(e => e.id);
+        expect(order.indexOf('loader')).toBeLessThan(order.indexOf('schema'));
+        expect(order.indexOf('schema')).toBeLessThan(order.indexOf('summary'));
+        expect(order.indexOf('schema') - order.indexOf('loader')).toBe(1);            // directly under the Package card
+        expect(document.querySelector('#step-checks #schema')).toBeNull();
+    });
+
+    it('goes away with the package and comes back with the next one', async () => {
+        const ui = await loaded();
+        await ui.click('remove-btn');
+        expect($('schema').hidden).toBe(true);
+        expect($('schema-body').children).toHaveLength(0);
+        await ui.open('b.zip', packageBytes());
+        expect($('schema').hidden).toBe(false);
+        expect(text('schema-headline')).toBe('The manifest follows schema v1.19');
     });
 
     it('has a check row that passes', async () => {

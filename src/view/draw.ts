@@ -5,7 +5,7 @@ import { flattenOnAccent } from '../services/preview';
 
 export interface PngLike { header: { width: number; height: number }; rgba: Uint8Array }
 
-export function cssRgb(name: string, fallback: string): { r: number; g: number; b: number } {
+function cssRgb(name: string, fallback: string): { r: number; g: number; b: number } {
     const raw = typeof getComputedStyle === 'function' ? getComputedStyle(document.documentElement).getPropertyValue(name) : '';
     return parseCssColor(raw, fallback);
 }
@@ -21,7 +21,7 @@ export function paintTile(canvas: HTMLCanvasElement, rgba: Uint8Array, width: nu
 }
 
 /** The shape of an icon in one colour: every visible pixel takes the colour, the alpha stays. */
-export function tinted(rgba: Uint8Array, c: { r: number; g: number; b: number }): Uint8Array {
+function tinted(rgba: Uint8Array, c: { r: number; g: number; b: number }): Uint8Array {
     const out = rgba.slice();
     for (let i = 0; i < out.length; i += 4) { out[i] = c.r; out[i + 1] = c.g; out[i + 2] = c.b; }
     return out;

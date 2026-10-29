@@ -14,9 +14,6 @@ import {
 } from '../services/edit/fields';
 import { originalOf, type Edits, type Original } from '../services/edit/edits';
 import { SLOT_LABEL, SLOT_SIDE } from '../services/edit/iconEdit';
-import { ALREADY_SEE_THROUGH, ALREADY_WHITE } from '../services/image/transparent';
-import { flattenOnAccent, parseAccent } from '../services/preview';
-import { cssRgb, paintTile, tinted } from './draw';
 import type { Plan } from '../services/export';
 import type { IconInfo, IconSet, ManifestView } from '../types';
 
@@ -39,15 +36,8 @@ export interface EditorHandlers {
     onField: (path: FieldPath, value: string) => void;
     onRevertField: (path: FieldPath) => void;
     onRevertAll: () => void;
-    onIconPick: (slot: IconSlot) => void;
-    onIconFile: (slot: IconSlot, file: File) => void;
-    onIconRevert: (slot: IconSlot) => void;
-    /** Opens the image editor on a slot; the preset starts it with the usual steps. */
-    onIconEdit: (slot: IconSlot, preset?: 'teams' | 'outline') => void;
-    /** Takes the flat background colour away from the icon, in one go. */
-    onIconTransparent: (slot: IconSlot) => void;
-    /** Makes the shape of the outline icon white, as Teams asks. */
-    onIconWhite: () => void;
+    /** Opens the image editor on the icon of a slot: the one way to change an icon. */
+    onIconEdit: (slot: IconSlot) => void;
 }
 
 let handlers: EditorHandlers | null = null;
@@ -109,75 +99,23 @@ function fieldRow(def: FieldDef): HTMLElement {
             el('p', { class: 'export-reason ed-error', id: `ed-err-${def.path}`, role: 'alert', hidden: true })));
 }
 
-/** One labelled row of actions: a fixed label column, then the buttons. */
-function actionRow(label: string, ...buttons: Array<Node | null>): HTMLElement {
-    return el('div', { class: 'ed-act-row' },
-        el('span', { class: 'ed-act-label' }, label),
-        el('div', { class: 'ed-act-buttons' }, ...buttons));
-}
-
 function iconCard(slot: IconSlot): HTMLElement {
     const label = SLOT_LABEL[slot];
     const side = SLOT_SIDE[slot];
-    const pick = el('button', { id: `ed-img-pick-${slot}`, type: 'button', class: 'btn btn--secondary btn--sm' }, icon('upload', 'icon--xs'), `Choose a ${side} x ${side} PNG`);
-    pick.addEventListener('click', () => handlers?.onIconPick(slot));
+    // The card shows the icon and one button: everything else (a new image, the background, the colours, the shape) is done in the image editor.
     const edit = el('button', { id: `ed-img-edit-${slot}`, type: 'button', class: 'btn btn--primary btn--sm' }, icon('wand', 'icon--xs'), 'Edit image');
     edit.addEventListener('click', () => handlers?.onIconEdit(slot));
-    const transparent = slot === 'color'
-        ? el('button', { id: 'ed-img-transparent-color', type: 'button', class: 'btn btn--secondary btn--sm', title: 'Take away the flat colour behind the logo, so that the accent colour shows through' }, icon('eraser', 'icon--xs'), 'Make background transparent')
-        : null;
-    transparent?.addEventListener('click', () => handlers?.onIconTransparent('color'));
-    const whiteShape = slot === 'outline'
-        ? el('button', { id: 'ed-img-white-outline', type: 'button', class: 'btn btn--secondary btn--sm', title: 'Give every visible pixel of the outline icon the colour white' }, icon('wand', 'icon--xs'), 'Make the shape white')
-        : null;
-    whiteShape?.addEventListener('click', () => handlers?.onIconWhite());
-    const outlinePreset = slot === 'outline'
-        ? el('button', { id: 'ed-img-outline-preset', type: 'button', class: 'btn btn--secondary btn--sm', title: 'Make a white silhouette of the colour icon, 32 x 32' }, icon('wand', 'icon--xs'), 'Outline from this icon')
-        : null;
-    outlinePreset?.addEventListener('click', () => handlers?.onIconEdit('outline', 'outline'));
-    const barColour = slot === 'outline'
-        ? el('input', { id: 'ed-img-bar-colour', class: 'color-input', type: 'color', value: '#5b5fc7', title: 'The colour to try on the shape: it is not saved, Teams chooses the real one', 'aria-label': 'Preview colour of the outline icon (not saved)' })
-        : null;
-    barColour?.addEventListener('input', () => paintBar());
-    const revert = el('button', { id: `ed-img-revert-${slot}`, type: 'button', class: 'btn btn--secondary btn--sm', hidden: true }, icon('undo', 'icon--xs'), 'Revert');
-    revert.addEventListener('click', () => handlers?.onIconRevert(slot));
-    const file = el('input', { id: `ed-img-file-${slot}`, type: 'file', accept: 'image/png', hidden: true });
-    file.addEventListener('change', () => { const f = file.files?.[0]; if (f) handlers?.onIconFile(slot, f); file.value = ''; });
 
-    const c = card({ icon: 'image', title: label[0]!.toUpperCase() + label.slice(1), note: `${side} x ${side} pixels`, id: `ed-img-${slot}` },
+    return card({ icon: 'image', title: label[0]!.toUpperCase() + label.slice(1), note: `${side} x ${side} pixels`, id: `ed-img-${slot}` },
         el('div', { class: 'ed-img-row' },
             el('figure', { class: 'ed-img-fig' },
                 el('canvas', { id: `ed-img-canvas-${slot}`, class: 'ed-img-canvas ed-checker', width: String(side), height: String(side), 'aria-label': `Current ${label}, the chequered parts are see-through`, role: 'img' }),
                 el('figcaption', {}, 'The picture')),
-            slot === 'color'
-                ? el('figure', { class: 'ed-img-fig' },
-                    el('canvas', { id: 'ed-img-onaccent-color', class: 'ed-img-canvas', width: String(side), height: String(side), 'aria-label': 'The colour icon on the accent colour', role: 'img' }),
-                    el('figcaption', { id: 'ed-img-onaccent-label' }, 'On the accent colour'))
-                : null,
-            slot === 'outline'
-                ? el('figure', { class: 'ed-img-fig' },
-                    el('canvas', { id: 'ed-img-onbar-outline', class: 'ed-img-canvas ed-bar', width: String(side), height: String(side), 'aria-label': 'The outline icon on the Teams app bar, in the preview colour', role: 'img' }),
-                    el('figcaption', {},
-                        el('label', { for: 'ed-img-bar-colour' }, 'Preview colour'),
-                        barColour))
-                : null,
             el('div', { class: 'ed-img-info' },
                 el('p', { class: 'ed-img-facts', id: `ed-img-facts-${slot}` }),
                 el('p', { class: 'ed-img-caption', id: `ed-img-caption-${slot}`, hidden: true }),
-                el('div', { class: 'ed-actions' },
-                    actionRow('Image', edit, pick, revert, file),
-                    actionRow('Quick fix', transparent, outlinePreset, whiteShape)),
+                el('div', { class: 'ed-img-actions' }, edit),
                 el('p', { class: 'export-reason ed-error', id: `ed-img-msg-${slot}`, role: 'alert', hidden: true }))));
-    // a file dropped on the card
-    c.addEventListener('dragover', e => { e.preventDefault(); c.classList.add('is-over'); });
-    c.addEventListener('dragleave', () => c.classList.remove('is-over'));
-    c.addEventListener('drop', e => {
-        e.preventDefault();
-        c.classList.remove('is-over');
-        const f = e.dataTransfer?.files?.[0];
-        if (f) handlers?.onIconFile(slot, f);
-    });
-    return c;
 }
 
 
@@ -196,7 +134,7 @@ function build(root: HTMLElement): void {
         el('p', { class: 'field-hint', id: 'ed-intro' }, 'Change the text of the app. The preview and the checks use your changes, and the package you save differs from the one you opened only in what you changed.'),
         revertAll('ed-revert-all')));
     look.append(el('div', { class: 'ed-top' },
-        el('p', { class: 'field-hint', id: 'ed-intro-look' }, 'Colour and icons. The picture is shown on a chequerboard (the chequered parts are see-through) and on the accent colour, as Teams will draw it.'),
+        el('p', { class: 'field-hint', id: 'ed-intro-look' }, 'Colour and icons. The pictures are shown as they are, on a chequerboard (the chequered parts are see-through); the accent colour is not drawn behind them.'),
         revertAll('ed-revert-all-look')));
 
     for (const g of GROUPS) {
@@ -232,21 +170,12 @@ function paint(canvas: HTMLCanvasElement, png: { header: { width: number; height
     ctx.putImageData(img, 0, 0);
 }
 
-/** The picture as it is on a chequerboard (the chequered parts are see-through), and, for the colour icon, on the accent colour. */
-function drawIcon(slot: IconSlot, info: IconInfo, accent: string | null): void {
+/** The picture as it is on a chequerboard (the chequered parts are see-through); it is never drawn on the accent colour. */
+function drawIcon(slot: IconSlot, info: IconInfo): void {
     const canvas = $(`ed-img-canvas-${slot}`) as HTMLCanvasElement | null;
-    const onAccent = slot === 'color' ? $('ed-img-onaccent-color') as HTMLCanvasElement | null : null;
-    if (onAccent) {
-        // the accent colour is data from the package, the one colour that is not a theme colour
-        if (accent && /^#[0-9a-f]{6}$/i.test(accent)) onAccent.style.background = accent;
-        else onAccent.style.removeProperty('background');
-        const label = $('ed-img-onaccent-label');
-        if (label) label.textContent = accent ? `On the accent colour ${accent}` : 'On the accent colour';
-    }
     const png = info.png;
     if (!png || png.kind !== 'ok') return;
     if (canvas) paint(canvas, png);
-    if (onAccent) paint(onAccent, png);
 }
 
 function updateIcon(slot: IconSlot, m: EditorModel): void {
@@ -260,10 +189,7 @@ function updateIcon(slot: IconSlot, m: EditorModel): void {
                 : `${now.path} - not a PNG the tool can read`;
     }
     $(`ed-img-${slot}`)?.setAttribute('data-changed', String(replaced));
-    ($(`ed-img-revert-${slot}`) as HTMLButtonElement).hidden = !replaced;
     setError(`ed-img-msg-${slot}`, m.iconMessage[slot]);
-    // "nothing to take away" is information, not a fault: it is not red
-    $(`ed-img-msg-${slot}`)?.classList.toggle('is-info', m.iconMessage[slot] === ALREADY_SEE_THROUGH || m.iconMessage[slot] === ALREADY_WHITE);
     // the see-through parts of the colour icon show the accent colour: say so, because that is the colour behind them
     const caption = $(`ed-img-caption-${slot}`);
     if (caption && slot === 'outline') {
@@ -277,27 +203,12 @@ function updateIcon(slot: IconSlot, m: EditorModel): void {
         const readable = png !== null && png !== undefined && png.kind === 'ok';
         caption.hidden = !(slot === 'color' && readable && accent);
         caption.dataset.state = seeThrough ? 'see-through' : 'opaque';
-        // With a see-through icon the accent colour is what is behind the logo; with an opaque one it is not seen at all.
+        // A see-through icon is shown by itself; the accent colour is only named in the text.
         caption.textContent = seeThrough
-            ? `The chequered parts of the picture are see-through. Teams puts the accent colour ${accent ?? ''} behind them: that is the second picture, not part of the file.`
-            : `The picture has its own background (nothing is chequered), so the accent colour ${accent ?? ''} does not show behind it. Press "Make background transparent" to take the background away.`;
+            ? `The chequered parts of the picture are see-through, so it is shown by itself. The accent colour ${accent ?? ''} is saved in the manifest; some places draw it behind the picture and some do not (the admin center list showed the picture alone, observed 2026-10-28).`
+            : `The picture has its own background (nothing is chequered), so the accent colour ${accent ?? ''} does not show behind it. Open the image editor and use Remove background to take it away.`;
     }
-    drawIcon(slot, now, m.shown.manifest.accentColor);
-}
-
-// ── The colour to try on the outline icon ────────────────────────────────────
-
-let outlineNow: IconInfo | null = null;
-
-/** The outline icon on the bar of Teams in the colour that the user is trying; the file is not touched. */
-function paintBar(): void {
-    const canvas = $('ed-img-onbar-outline') as HTMLCanvasElement | null;
-    const picker = $('ed-img-bar-colour') as HTMLInputElement | null;
-    const png = outlineNow?.png;
-    if (!canvas || !picker || !png || png.kind !== 'ok') return;
-    const pick = parseAccent(picker.value) ?? { r: 91, g: 95, b: 199 };
-    const bar = cssRgb('--bar-light-bg', '#f0f0f0');
-    paintTile(canvas, flattenOnAccent(tinted(png.rgba, pick), bar), png.header.width, png.header.height);
+    drawIcon(slot, now);
 }
 
 export function renderEditor(root: HTMLElement, m: EditorModel): void {
@@ -350,13 +261,7 @@ export function renderEditor(root: HTMLElement, m: EditorModel): void {
         const busy = m.imageEditorSlot !== null && m.imageEditorSlot !== slot;
         b.disabled = busy;
         b.title = busy ? 'Another image editor is open: apply or cancel it first.' : `Edit the ${SLOT_LABEL[slot]} as an image`;
-        const preset = $('ed-img-outline-preset') as HTMLButtonElement | null;
-        if (preset && slot === 'outline') { preset.disabled = busy; }
-        const clear = $('ed-img-transparent-color') as HTMLButtonElement | null;
-        if (clear && slot === 'color') clear.disabled = busy;
     }
-    outlineNow = m.shown.icons.outline;
-    paintBar();
     const nothing = !any && Object.keys(m.edits.fields).length === 0;
     ($('ed-revert-all') as HTMLButtonElement).disabled = nothing;
     ($('ed-revert-all-look') as HTMLButtonElement).disabled = nothing;
@@ -364,7 +269,6 @@ export function renderEditor(root: HTMLElement, m: EditorModel): void {
 
 /** Forget the built controls (a new package starts from a clean editor). */
 export function resetEditor(root: HTMLElement): void {
-    outlineNow = null;
     clear(root);
     const look = $('look-groups');
     if (look) clear(look);

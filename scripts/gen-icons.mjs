@@ -63,6 +63,14 @@ const ICONS = {
     crop: "<path d='M5.5 2v8.5H14M2 5.5h8.5V14'/>",
     list: "<path d='M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01'/>",
     save: "<path d='M3.5 2.5h7l2.5 2.5v7.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z'/><path d='M5.5 2.5v3h4v-3M5 13.5v-4h6v4'/>",
+    redo: "<path d='M13 6.5H6.5a3.5 3.5 0 0 0 0 7H10'/><path d='M10.5 3.5l3 3-3 3'/>",
+    bucket: "<path d='M3.5 8.5 7.5 4.5l4.5 4.5-4 4a1.4 1.4 0 0 1-2 0L3.5 10.5a1.4 1.4 0 0 1 0-2z'/><path d='M7.5 4.5 6 3a1.4 1.4 0 0 1 2-2l2 2M12.8 11c.8 1 1.3 1.8 1.3 2.5a1.3 1.3 0 0 1-2.6 0c0-.7.5-1.5 1.3-2.5z'/>",
+    trim: "<rect x='2.5' y='2.5' width='11' height='11' rx='1' stroke-dasharray='2 2'/><rect x='5.5' y='5.5' width='5' height='5'/>",
+    square: "<rect x='3' y='3' width='10' height='10' rx='1'/><path d='M5.5 8h5M8 5.5v5'/>",
+    frame: "<rect x='2' y='2' width='12' height='12' rx='1'/><rect x='5' y='5' width='6' height='6'/>",
+    'flip-v': "<path d='M2 8h12'/><path d='M4 6 8 2l4 4zM4 10l4 4 4-4z'/>",
+    contrast: "<circle cx='8' cy='8' r='5.5'/><path d='M8 2.5v11a5.5 5.5 0 0 0 0-11z'/>",
+    shape: "<path d='M8 2.2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.7l-3.6 1.9.7-4L2.2 6.5l4-.6z'/>",
 };
 
 const mask = inner => {

@@ -50,16 +50,6 @@ export async function pickPackage(): Promise<PickedFile | null> {
     return { name: baseName(path), bytes: Uint8Array.from(data) };
 }
 
-/** Asks the host for a PNG (an icon) and reads it; `null` when the user cancels. */
-export async function pickPng(title: string): Promise<PickedFile | null> {
-    const fs = hostFs();
-    if (!fs?.selectPath || !fs.readBinary) return null;
-    const path = await fs.selectPath({ type: 'file', title, buttonLabel: 'Use this image', filters: [{ name: 'PNG image', extensions: ['png'] }] });
-    if (!path) return null;
-    const data = await fs.readBinary(path);
-    return { name: baseName(path), bytes: Uint8Array.from(data) };
-}
-
 /** Asks the host for an image of any kind the image editor reads; `null` when the user cancels. */
 export async function pickImage(): Promise<PickedFile | null> {
     const fs = hostFs();

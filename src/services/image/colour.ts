@@ -69,7 +69,7 @@ export function hslToRgb(h: number, s: number, l: number): Rgb {
     return { r: clamp255((r1 + m) * 255), g: clamp255((g1 + m) * 255), b: clamp255((b1 + m) * 255) };
 }
 
-export function pixelAt(p: Picture, x: number, y: number): { r: number; g: number; b: number; a: number } | null {
+function pixelAt(p: Picture, x: number, y: number): { r: number; g: number; b: number; a: number } | null {
     if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= p.width || y >= p.height) return null;
     const i = (y * p.width + x) * 4;
     return { r: p.data[i]!, g: p.data[i + 1]!, b: p.data[i + 2]!, a: p.data[i + 3]! };
@@ -89,28 +89,6 @@ export function cornerColour(p: Picture): Rgb {
     let best = seen[0]!;
     for (const s of seen) if (s.n > best.n) best = s;
     return best.c;
-}
-
-/**
- * The main colour of the logo: among pixels with alpha at least 200 and, when the top-left pixel is
- * opaque, further than 8 percent from it, the most common colour after reducing each channel to 5 bits;
- * the answer is the mean of the pixels in that group. A tie goes to the group that appears first.
- */
-export function dominantColour(p: Picture): Rgb | null {
-    const first = pixelAt(p, 0, 0);
-    const background = first && first.a === 255 ? { r: first.r, g: first.g, b: first.b } : null;
-    const groups = new Map<number, { n: number; r: number; g: number; b: number }>();
-    for (let i = 0; i < p.data.length; i += 4) {
-        if (p.data[i + 3]! < 200) continue;
-        const r = p.data[i]!, g = p.data[i + 1]!, b = p.data[i + 2]!;
-        if (background && distancePercentRaw(r, g, b, background) <= 8) continue;
-        const key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
-        const grp = groups.get(key);
-        if (grp) { grp.n++; grp.r += r; grp.g += g; grp.b += b; } else groups.set(key, { n: 1, r, g, b });
-    }
-    let best: { n: number; r: number; g: number; b: number } | null = null;
-    for (const grp of groups.values()) if (!best || grp.n > best.n) best = grp;
-    return best ? { r: Math.round(best.r / best.n), g: Math.round(best.g / best.n), b: Math.round(best.b / best.n) } : null;
 }
 
 /** WCAG relative luminance of an sRGB colour, 0 (black) to 1 (white). */

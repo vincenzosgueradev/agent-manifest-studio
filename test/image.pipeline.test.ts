@@ -1,6 +1,6 @@
 /** Feature 004: the list of operations, history, presets, PNG writing, import and what Apply refuses. */
 import { describe, expect, it } from 'vitest';
-import { add, applyOp, checkpoint, create, defaultOp, evaluate, hasFlatBorder, opProblem, presetOutline, presetTeamsColour, redo, remove, reset, SAFE_AREA_SHARE, undo, update, withSource } from '../src/services/image/pipeline';
+import { add, applyOp, checkpoint, create, reset, defaultOp, evaluate, hasFlatBorder, opProblem, presetOutline, presetTeamsColour, redo, remove, SAFE_AREA_SHARE, undo, update, withSource } from '../src/services/image/pipeline';
 import { acceptResult, toTarget } from '../src/services/image/accept';
 import { encodePng } from '../src/services/image/pngWrite';
 import { fromPng, importImage, reduceTo, sniff, type HostDecoder } from '../src/services/image/import';
@@ -122,7 +122,7 @@ describe('history', () => {
         expect(undo(pl)).toBe(pl);
     });
 
-    it('reset empties the list and can be undone; resetting an empty list does nothing', () => {
+    it('reset empties the list in one change that Undo brings back; resetting an empty list does nothing', () => {
         const empty = create(logoOnWhite());
         expect(reset(empty)).toBe(empty);
         const pl = add(add(empty, OPS[0]!), OPS[1]!);
@@ -204,7 +204,7 @@ describe('presets', () => {
 
     it('defaults do something sensible for every kind', () => {
         const p = logoOnWhite();
-        for (const kind of ['removeBg', 'trim', 'crop', 'square', 'fit', 'resize', 'rotate', 'flip', 'fill', 'solid', 'tone', 'outline'] as const) {
+        for (const kind of ['removeBg', 'trim', 'crop', 'square', 'fit', 'rotate', 'flip', 'fill', 'solid', 'tone', 'outline'] as const) {
             const op = defaultOp(kind, p, 192);
             expect(op.kind).toBe(kind);
             expect(opProblem(p, op)).toBeNull();

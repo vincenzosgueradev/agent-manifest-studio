@@ -56,7 +56,6 @@ export type Op =
     | { kind: 'crop'; x: number; y: number; w: number; h: number }
     | { kind: 'square'; fill: Rgb | null }
     | { kind: 'fit'; target: number; share: number }
-    | { kind: 'resize'; w: number; h: number }
     | { kind: 'rotate'; quarters: 1 | 2 | 3 }
     | { kind: 'flip'; axis: 'h' | 'v' }
     | { kind: 'fill'; colour: Rgb }

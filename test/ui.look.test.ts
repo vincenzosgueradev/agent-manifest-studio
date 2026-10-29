@@ -9,7 +9,6 @@ import { packageBytes } from './helpers/fixture';
 import { encodePng } from './helpers/png-encoder';
 
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
-const field = (path: string) => $(`ed-${path}`) as HTMLInputElement;
 
 async function loaded(opts: Parameters<typeof packageBytes>[0] = {}): Promise<Ui> {
     const ui = await boot();
@@ -65,14 +64,16 @@ describe('the before and after band', () => {
     it('says Changed only for the icon that changed: the colour icon alone, then the outline icon alone', async () => {
         const flat = encodePng({ width: 192, height: 192, colorType: 6, pixel: (x, y) => (x >= 66 && x < 126 && y >= 66 && y < 126 ? [255, 255, 255, 255] : [7, 104, 125, 255]) });
         const ui = await loaded({ color: flat });
-        await ui.click('ed-img-transparent-color');
+        await ui.click('ed-img-edit-color');
+        await ui.click('ie-add-removeBg');
+        await ui.click('ie-apply');
         expect(state('cmp-state-color')).toBe('Changed');
         expect(state('cmp-state-outline')).toBe('Unchanged');
         expect(state('cmp-state-accent')).toBe('Unchanged');
         await ui.click('ed-revert-all-look');
-        const coloured = encodePng({ width: 32, height: 32, colorType: 6, pixel: (x, y) => (x >= 8 && x < 24 && y >= 8 && y < 24 ? [200, 30, 30, 255] : [0, 0, 0, 0]) });
-        const ui2 = await loaded({ outline: coloured });
-        await ui2.click('ed-img-white-outline');
+        await ui.click('ed-img-edit-outline');
+        await ui.click('ie-add-rotate');
+        await ui.click('ie-apply');
         expect(state('cmp-state-outline')).toBe('Changed');
         expect(state('cmp-state-color')).toBe('Unchanged');
     });
@@ -112,6 +113,7 @@ describe('the order of the cards', () => {
         const ui = await loaded();
         await ui.click('ed-img-edit-color');
         expect($('ie-card').parentElement!.id).toBe('image-editor-root');
+        expect($('ie-card').classList.contains('ie-workspace')).toBe(true);        // a workspace over the page (feature 009)
         expect([...$('look-groups').children].map(c => c.id).pop()).toBe('image-editor-root');
     });
 
@@ -122,45 +124,82 @@ describe('the order of the cards', () => {
     });
 });
 
-describe('the actions of the icon cards', () => {
-    const rows = (id: string) => [...document.querySelectorAll(`#${id} .ed-act-row`)].map(r => ({
-        label: r.querySelector('.ed-act-label')!.textContent,
-        buttons: [...r.querySelectorAll('.ed-act-buttons > button')].map(b => (b.textContent ?? '').trim()),
-    }));
+describe('the icon cards have one action, Edit image (2026-10-29)', () => {
+    const buttons = (id: string): string[] => [...document.querySelectorAll(`#${id} button`)].map(b => b.id);
 
-    it('colour icon: Image (Edit image, Choose, Revert) and Quick fix (Make background transparent)', async () => {
+    it('each card has the Edit image button and no other control', async () => {
         await loaded();
-        expect(rows('ed-img-color')).toEqual([
-            { label: 'Image', buttons: ['Edit image', 'Choose a 192 x 192 PNG', 'Revert'] },
-            { label: 'Quick fix', buttons: ['Make background transparent'] },
-        ]);
+        expect(buttons('ed-img-color')).toEqual(['ed-img-edit-color']);
+        expect(buttons('ed-img-outline')).toEqual(['ed-img-edit-outline']);
+        for (const id of ['ed-img-color', 'ed-img-outline']) {
+            expect(document.querySelectorAll(`#${id} input, #${id} select, #${id} textarea`), id).toHaveLength(0);
+            expect(document.querySelector(`#${id} button`)!.textContent!.trim(), id).toBe('Edit image');
+        }
     });
 
-    it('outline icon: Image (Edit image, Choose, Revert) and Quick fix (Outline from this icon, Make the shape white)', async () => {
+    it('the controls that moved into the image editor, or went, are not on the cards', async () => {
         await loaded();
-        expect(rows('ed-img-outline')).toEqual([
-            { label: 'Image', buttons: ['Edit image', 'Choose a 32 x 32 PNG', 'Revert'] },
-            { label: 'Quick fix', buttons: ['Outline from this icon', 'Make the shape white'] },
-        ]);
+        for (const id of ['ed-img-pick-color', 'ed-img-pick-outline', 'ed-img-revert-color', 'ed-img-revert-outline', 'ed-img-transparent-color', 'ed-img-white-outline',
+            'ed-img-outline-preset', 'ed-img-bar-colour', 'ed-img-onbar-outline', 'ed-img-file-color', 'ed-img-file-outline', 'ed-img-borderless-color', 'ed-img-logo-colour']) {
+            expect(document.getElementById(id), id).toBeNull();
+        }
+        expect(document.querySelector('.ed-act-row')).toBeNull();
     });
 
-    it('the preview colour picker is in the caption of its picture, not among the buttons', async () => {
-        await loaded();
-        expect($('ed-img-bar-colour').closest('figcaption')).not.toBeNull();
-        expect($('ed-img-bar-colour').closest('.ed-act-buttons')).toBeNull();
+    it('the one button is Edit image and opens the editor of its icon; it is disabled while the other icon is being edited', async () => {
+        const ui = await loaded();
+        await ui.click('ed-img-edit-color');
+        expect(($('ed-img-edit-outline') as HTMLButtonElement).disabled).toBe(true);
+        expect($('ed-img-edit-outline').title).toContain('Another image editor is open');
+        expect(($('ed-img-edit-color') as HTMLButtonElement).disabled).toBe(false);
     });
 
-    it('Logo without background and its colour picker are gone', async () => {
+    it('every control of the editor is the way to what the cards used to do: Remove background, Outline from this icon, Solid colour, Open another image', async () => {
+        const ui = await loaded();
+        await ui.click('ed-img-edit-color');
+        for (const id of ['ie-add-removeBg', 'ie-add-solid', 'ie-open-other', 'ie-preset-teams']) expect(document.getElementById(id), id).not.toBeNull();
+        await ui.click('ie-cancel');
+        await ui.click('ed-img-edit-outline');
+        for (const id of ['ie-preset-outline', 'ie-add-solid', 'ie-open-other']) expect(document.getElementById(id), id).not.toBeNull();
+    });
+});
+
+describe('a see-through icon is shown alone (FR-014, FR-015)', () => {
+    const flat = (): Uint8Array => encodePng({ width: 192, height: 192, colorType: 6, pixel: (x, y) => (x >= 66 && x < 126 && y >= 66 && y < 126 ? [255, 255, 255, 255] : [7, 104, 125, 255]) });
+
+    it('the colour icon card has one picture, not a second one on the accent colour', async () => {
         await loaded();
-        expect(document.getElementById('ed-img-borderless-color')).toBeNull();
-        expect(document.getElementById('ed-img-logo-colour')).toBeNull();
+        expect(document.getElementById('ed-img-onaccent-color')).toBeNull();
+        expect(document.getElementById('ed-img-onaccent-label')).toBeNull();
+        expect(document.querySelectorAll('#ed-img-color .ed-img-fig canvas')).toHaveLength(1);
     });
 
-    it('Make background transparent still works', async () => {
-        const flat = encodePng({ width: 192, height: 192, colorType: 6, pixel: (x, y) => (x >= 66 && x < 126 && y >= 66 && y < 126 ? [255, 255, 255, 255] : [7, 104, 125, 255]) });
-        const ui = await loaded({ color: flat });
-        await ui.click('ed-img-transparent-color');
-        expect($('ed-img-color').getAttribute('data-changed')).toBe('true');
-        expect(field('accentColor').value.toLowerCase()).toBe('#07687d');
+    it('the tile of the band keeps the see-through pixels and sits on a chequerboard', async () => {
+        const ui = await loaded();
+        for (const row of ['original', 'now']) {
+            const canvas = $(`cmp-${row}-color`) as HTMLCanvasElement;
+            expect(canvas.classList.contains('ed-checker'), row).toBe(true);
+            expect(ui.pixels(canvas)!.data[3], row).toBe(0);                // the corner is see-through, not the accent colour
+        }
+    });
+
+    it('an opaque icon is drawn as it is, with no chequerboard, and becomes see-through in the Now row only', async () => {
+        const ui = await loaded({ color: flat() });
+        expect($('cmp-original-color').classList.contains('ed-checker')).toBe(false);
+        expect($('cmp-now-color').classList.contains('ed-checker')).toBe(false);
+        expect(ui.pixels($('cmp-now-color') as HTMLCanvasElement)!.data[3]).toBe(255);
+        await ui.click('ed-img-edit-color');
+        await ui.click('ie-add-removeBg');
+        await ui.click('ie-apply');
+        expect($('cmp-now-color').classList.contains('ed-checker')).toBe(true);
+        expect(ui.pixels($('cmp-now-color') as HTMLCanvasElement)!.data[3]).toBe(0);
+        expect($('cmp-original-color').classList.contains('ed-checker')).toBe(false);
+        expect(ui.pixels($('cmp-original-color') as HTMLCanvasElement)!.data[3]).toBe(255);
+    });
+
+    it('the accent colour is still written as text in both rows', async () => {
+        await loaded();
+        expect($('cmp-original-accent').textContent).toBe('#07687d');
+        expect($('cmp-now-accent').textContent).toBe('#07687d');
     });
 });

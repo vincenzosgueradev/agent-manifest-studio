@@ -3,8 +3,9 @@
  * which are written from research.md section 1 and share no code with src/.
  */
 import { describe, expect, it } from 'vitest';
-import { crop, cropProblem, fillOn, fit, flip, isEmptyPicture, outlineMaker, removeBackground, resize, rotate, solid, square, tone, trim, trimBox } from '../src/services/image/ops';
-import { cornerColour, dominantColour, distancePercent, fromHex, toHex, luma } from '../src/services/image/colour';
+import { crop, cropProblem, fillOn, fit, flip, isEmptyPicture, outlineMaker, removeBackground, rotate, solid, square, tone, trim, trimBox } from '../src/services/image/ops';
+import { resizePicture as resize } from '../src/services/image/resample';
+import { cornerColour, distancePercent, fromHex, toHex, luma } from '../src/services/image/colour';
 import type { Picture, ToneOp } from '../src/services/image/types';
 import * as O from './helpers/image-oracle';
 import { cases, rng } from './helpers/combinatorics';
@@ -378,15 +379,6 @@ describe('colour helpers', () => {
         expect(cornerColour(pic(tie))).toEqual({ r: 9, g: 9, b: 9 });
         const four = O.make(2, 2, (x, y) => [x * 10, y * 10, 0, 255]);
         expect(cornerColour(pic(four))).toEqual({ r: 0, g: 0, b: 0 });
-    });
-    it('dominant colour is the main colour of the logo, not the background', () => {
-        const p = O.make(20, 20, (x, y) => (x >= 2 && x < 12 && y >= 2 && y < 12 ? [20, 120, 200, 255] : x >= 14 && y < 3 ? [200, 0, 0, 255] : [255, 255, 255, 255]));
-        expect(dominantColour(pic(p))).toEqual({ r: 20, g: 120, b: 200 });
-    });
-    it('dominant colour ignores transparency and gives nothing for an empty picture', () => {
-        expect(dominantColour(pic(O.make(4, 4, () => [10, 10, 10, 0])))).toBeNull();
-        const half = O.make(4, 4, (x) => (x === 1 || x === 2 ? [0, 255, 0, 255] : [255, 0, 255, 0]));
-        expect(dominantColour(pic(half))).toEqual({ r: 0, g: 255, b: 0 });
     });
     it('isEmptyPicture', () => {
         expect(isEmptyPicture(pic(O.make(3, 3, () => [1, 2, 3, 0])))).toBe(true);

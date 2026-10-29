@@ -7,7 +7,7 @@
  */
 
 import { cornerColour, distancePercentRaw } from './colour';
-import { crop, cropProblem, fillOn, fit, flip, outlineMaker, removeBackground, resize, rotate, solid, square, tone, trim } from './ops';
+import { crop, cropProblem, fillOn, fit, flip, outlineMaker, removeBackground, rotate, solid, square, tone, trim } from './ops';
 import { hasAlpha, HISTORY_MAX, type Op, type OpKind, type Picture } from './types';
 
 /** The safe area of a 192 pixel colour icon as a share of its side: 120 / 192. */
@@ -27,7 +27,6 @@ export function applyOp(p: Picture, op: Op): Picture {
         case 'crop': return crop(p, op.x, op.y, op.w, op.h);
         case 'square': return square(p, op.fill);
         case 'fit': return fit(p, op.target, op.share);
-        case 'resize': return resize(p, op.w, op.h);
         case 'rotate': return rotate(p, op.quarters);
         case 'flip': return flip(p, op.axis);
         case 'fill': return fillOn(p, op.colour);
@@ -80,6 +79,9 @@ export function remove(pl: Pipeline, index: number): Pipeline {
     return change(pl, pl.ops.filter((_, i) => i !== index));
 }
 
+/** Every step taken away in one change, so that Undo brings them all back. */
+export const reset = (pl: Pipeline): Pipeline => (pl.ops.length === 0 ? pl : change(pl, []));
+
 /** Replaces one operation. `recordStep: false` is for the many small changes of a slider: see `checkpoint`. */
 export function update(pl: Pipeline, index: number, op: Op, recordStep = true): Pipeline {
     if (index < 0 || index >= pl.ops.length) return pl;
@@ -102,7 +104,6 @@ export function redo(pl: Pipeline): Pipeline {
     return { ...pl, ops: next, undoStack: record(pl), redoStack: pl.redoStack.slice(0, -1) };
 }
 
-export const reset = (pl: Pipeline): Pipeline => (pl.ops.length === 0 ? pl : change(pl, []));
 
 /** A new source (another image) keeps the operations and the history. */
 export const withSource = (pl: Pipeline, source: Picture): Pipeline => ({ ...pl, source });
@@ -118,7 +119,6 @@ export function defaultOp(kind: OpKind, current: Picture, target: number): Op {
         case 'crop': return { kind, x: 0, y: 0, w: current.width, h: current.height };
         case 'square': return { kind, fill: null };
         case 'fit': return { kind, target, share: target === 192 ? SAFE_AREA_SHARE : 100 };
-        case 'resize': return { kind, w: target, h: target };
         case 'rotate': return { kind, quarters: 1 };
         case 'flip': return { kind, axis: 'h' };
         case 'fill': return { kind, colour: white };

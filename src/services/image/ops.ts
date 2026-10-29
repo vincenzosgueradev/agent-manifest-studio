@@ -182,9 +182,6 @@ export function fit(p: Picture, target: number, share: number): Picture {
     return place(blank(target, target), scaled, Math.floor((target - nw) / 2), Math.floor((target - nh) / 2));
 }
 
-export function resize(p: Picture, w: number, h: number): Picture {
-    return resizePicture(p, w, h);
-}
 
 /** 90 degrees clockwise `quarters` times. */
 export function rotate(p: Picture, quarters: 1 | 2 | 3): Picture {

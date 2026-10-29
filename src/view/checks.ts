@@ -20,7 +20,7 @@ const GROUPS: readonly Group[] = [
     { prefix: 'name.', title: 'Names', icon: 'tag', note: 'length and difference' },
     { prefix: 'description.', title: 'Descriptions', icon: 'file-text', note: 'length' },
     { prefix: 'accent.', title: 'Accent colour', icon: 'palette', note: '#RRGGBB' },
-    { prefix: 'schema.', title: 'Manifest schema', icon: 'braces', note: 'details in the card above' },
+    { prefix: 'schema.', title: 'Manifest schema', icon: 'braces', note: 'details in the Package step' },
 ];
 
 const TONE: Record<Verdict, Tone> = { pass: 'success', warning: 'warning', fail: 'error' };

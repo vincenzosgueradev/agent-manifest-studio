@@ -6,7 +6,6 @@
 
 import { clear, el } from './dom';
 import { paintOnBar, paintTile, type PngLike } from './draw';
-import { flattenOnAccent, parseAccent } from '../services/preview';
 import type { IconSlot } from '../services/edit/fields';
 import type { IconInfo, IconSet } from '../types';
 
@@ -49,11 +48,16 @@ function build(root: HTMLElement): void {
     root.append(row('original', 'Original', 'as opened'), row('now', 'Now', 'as it will be saved'));
 }
 
+const seeThrough = (rgba: Uint8Array): boolean => { for (let i = 3; i < rgba.length; i += 4) if (rgba[i]! < 255) return true; return false; };
+
 function draw(row: Row, icons: IconSet, accent: string | null): void {
     const colour = png(icons.color);
     const colourCanvas = $(`cmp-${row}-color`) as HTMLCanvasElement;
-    const bg = accent ? parseAccent(accent) : null;
-    if (colour) paintTile(colourCanvas, flattenOnAccent(colour.rgba, bg ?? { r: 255, g: 255, b: 255 }), colour.header.width, colour.header.height);
+    // The icon is drawn as it is: a see-through one sits on a chequerboard, never on the accent colour.
+    if (colour) {
+        paintTile(colourCanvas, colour.rgba, colour.header.width, colour.header.height);
+        colourCanvas.classList.toggle('ed-checker', seeThrough(colour.rgba));
+    }
     const outline = png(icons.outline);
     for (const theme of ['light', 'dark'] as const) {
         const canvas = $(`cmp-${row}-bar-${theme}`) as HTMLCanvasElement;

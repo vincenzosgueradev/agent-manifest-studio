@@ -5,8 +5,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { boot, flush, type Ui } from './helpers/ui-harness';
-import { colorIcon, outlineIcon, packageBytes } from './helpers/fixture';
-import { encodePng, padPngTo, solidPng } from './helpers/png-encoder';
+import { packageBytes } from './helpers/fixture';
+import { encodePng } from './helpers/png-encoder';
 import * as O from './helpers/image-oracle';
 import { unzipSync } from './helpers/zip-builder';
 
@@ -17,7 +17,6 @@ const changed = (path: string) => row(path).getAttribute('data-changed') === 'tr
 const err = (path: string) => $(`ed-err-${path}`);
 const exportBtn = () => $('export-btn') as HTMLButtonElement;
 
-const newColor = (): Uint8Array => encodePng({ width: 192, height: 192, colorType: 6, pixel: (x, y) => (x >= 70 && x < 120 && y >= 70 && y < 120 ? [255, 255, 255, 255] : [0, 0, 0, 0]) });
 
 async function loaded(opts: Parameters<typeof packageBytes>[0] = {}): Promise<Ui> {
     const ui = await boot();
@@ -254,77 +253,22 @@ describe('icons', () => {
         expect(iconFacts('color')).toContain('color.png - 192 x 192 pixels');
         expect(iconFacts('outline')).toContain('outline.png - 32 x 32 pixels');
     });
-
-    it('a chosen PNG replaces the icon in the preview, the checks and the saved package', async () => {
-        const ui = await loaded();
-        ui.fakes.files.set('new.png', newColor());
-        await ui.click('ed-img-pick-color');
-        expect(iconFacts('color')).toContain('(replaced)');
-        expect(($('ed-img-revert-color') as HTMLButtonElement).hidden).toBe(false);
-        expect($('ed-img-color').getAttribute('data-changed')).toBe('true');
-        await ui.click('export-btn');
-        const out = unzipSync(ui.fakes.saved[0]!.bytes);
-        expect(Array.from(out['color.png']!)).toEqual(Array.from(newColor()));
-        expect(Array.from(out['outline.png']!)).toEqual(Array.from(outlineIcon()));
-    });
-
-    it('refuses a file of the wrong size, says why, and keeps the current icon', async () => {
-        const ui = await loaded();
-        ui.fakes.files.set('small.png', solidPng(100, 100, [1, 2, 3, 255]));
-        await ui.click('ed-img-pick-color');
-        const msg = $('ed-img-msg-color');
-        expect(msg.hidden).toBe(false);
-        expect(msg.textContent).toMatch(/192 x 192.*100 x 100/);
-        expect(iconFacts('color')).not.toContain('replaced');
-        expect(exportBtn().disabled).toBe(false);
-    });
-
-    it('refuses a file that is not a PNG', async () => {
-        const ui = await loaded();
-        ui.fakes.files.set('x.png', new Uint8Array([1, 2, 3, 4]));
-        await ui.click('ed-img-pick-outline');
-        expect($('ed-img-msg-outline').textContent).toContain('not a PNG');
-    });
-
-    it('a heavy PNG between the two documented limits is accepted and the check warns', async () => {
-        const ui = await loaded();
-        const base = encodePng({ width: 192, height: 192, colorType: 6, pixel: (x, y) => (x >= 70 && x < 120 && y >= 70 && y < 120 ? [255, 255, 255, 255] : [0, 0, 0, 0]) });
-        ui.fakes.files.set('heavy.png', padPngTo(base, 80 * 1024));
-        await ui.click('ed-img-pick-color');
-        expect($('ed-img-msg-color').hidden).toBe(true);
-        expect(document.querySelector('[data-check-id="color.weight"]')!.textContent).toContain('80.0 KB');
-    });
-
-    it('Revert puts the original icon back', async () => {
-        const ui = await loaded();
-        ui.fakes.files.set('new.png', newColor());
-        await ui.click('ed-img-pick-color');
-        await ui.click('ed-img-revert-color');
-        expect(iconFacts('color')).not.toContain('replaced');
-        await ui.click('export-btn');
-        const out = unzipSync(ui.fakes.saved[0]!.bytes);
-        expect(Array.from(out['color.png']!)).toEqual(Array.from(colorIcon()));
-    });
-
-    it('a refusal is cleared by the next good file', async () => {
-        const ui = await loaded();
-        ui.fakes.files.set('bad.png', solidPng(10, 10, [0, 0, 0, 255]));
-        await ui.click('ed-img-pick-color');
-        expect($('ed-img-msg-color').hidden).toBe(false);
-        ui.fakes.files.set('good.png', newColor());
-        await ui.click('ed-img-pick-color');
-        expect($('ed-img-msg-color').hidden).toBe(true);
-    });
 });
 
-describe('make the background transparent in one click', () => {
+describe('the colour icon: the caption, and Remove background in the image editor', () => {
     /** A white glyph on an opaque teal background, as Copilot Studio makes it. */
     const flatIcon = (): Uint8Array => encodePng({ width: 192, height: 192, colorType: 6, pixel: (x, y) => (x >= 66 && x < 126 && y >= 66 && y < 126 ? [255, 255, 255, 255] : [7, 104, 125, 255]) });
     const corner = (bytes: Uint8Array): number[] => { const r = O.readPng(bytes); return Array.from(r.data.slice(0, 4)); };
+    /** What the card used to do in one click: open the editor, take the background away from the edges, apply. */
+    const removeBackground = async (ui: Ui): Promise<void> => {
+        await ui.click('ed-img-edit-color');
+        await ui.click('ie-add-removeBg');
+        await ui.click('ie-apply');
+    };
 
     it('takes the flat colour away, keeps the logo, and puts the icon in the package', async () => {
         const ui = await loaded({ color: flatIcon() });
-        await ui.click('ed-img-transparent-color');
+        await removeBackground(ui);
         expect($('ed-img-color').getAttribute('data-changed')).toBe('true');
         expect($('ed-img-facts-color').textContent).toContain('(replaced)');
         expect(document.querySelector('#changes-table tr[data-icon="color"]')).not.toBeNull();
@@ -333,30 +277,29 @@ describe('make the background transparent in one click', () => {
         expect(corner(out)[3]).toBe(0);                                             // the corner is see-through
         const r = O.readPng(out);
         expect(Array.from(r.data.slice((96 * 192 + 96) * 4, (96 * 192 + 96) * 4 + 4))).toEqual([255, 255, 255, 255]);   // the logo is intact
-        expect($('ed-img-msg-color').hidden).toBe(true);
     });
 
-    it('an opaque icon says that the accent colour does not show, and the caption changes once the background is taken away', async () => {
+    it('an opaque icon says that the accent colour does not show and where to take the background away; once it is taken away the caption says the picture is shown by itself', async () => {
         const ui = await loaded({ color: flatIcon() });
         const caption = $('ed-img-caption-color');
         expect(caption.hidden).toBe(false);
         expect(caption.dataset.state).toBe('opaque');
         expect(caption.textContent).toContain('does not show behind it');
+        expect(caption.textContent).toContain('Open the image editor and use Remove background');
+        expect(caption.textContent).not.toContain('Make background transparent');
         // the picture is drawn on a chequerboard, never on the accent colour: transparent looks transparent
         expect($('ed-img-canvas-color').classList.contains('ed-checker')).toBe(true);
         expect($('ed-img-canvas-color').getAttribute('style') ?? '').toBe('');
-        expect($('ed-img-onaccent-color').getAttribute('style') ?? '').toContain('rgb(7, 104, 125)');
         expect(caption.textContent).toContain('#07687d');
         await ui.type('ed-accentColor', '#42b03b');
         expect(caption.textContent).toContain('#42b03b');            // it follows the accent colour as it is typed
-        await ui.click('ed-img-transparent-color');
+        await removeBackground(ui);
         expect(caption.dataset.state).toBe('see-through');
-        expect(caption.textContent).toContain('Teams puts the accent colour #42b03b behind them');
-        expect($('ed-img-onaccent-color').getAttribute('style') ?? '').toContain('rgb(66, 176, 59)');   // the second picture follows the accent colour
-        expect($('ed-img-onaccent-label').textContent).toBe('On the accent colour #42b03b');
+        expect(caption.textContent).toContain('so it is shown by itself');
+        expect(caption.textContent).toContain('The accent colour #42b03b is saved in the manifest');
+        expect(caption.textContent).not.toContain('Teams puts');
         // the first picture shows the transparency: its corner pixel is see-through
         expect(ui.pixels($('ed-img-canvas-color') as HTMLCanvasElement)!.data[3]).toBe(0);
-        expect(ui.pixels($('ed-img-onaccent-color') as HTMLCanvasElement)!.data[3]).toBe(0);
     });
 
     it('keeps the same colour where it is inside the logo (the face of the robot), and takes it away only at the edges', async () => {
@@ -367,7 +310,7 @@ describe('make the background transparent in one click', () => {
             return inSquare && !inHole ? [255, 255, 255, 255] : [7, 104, 125, 255];
         } });
         const ui = await loaded({ color: withHole });
-        await ui.click('ed-img-transparent-color');
+        await removeBackground(ui);
         await ui.click('export-btn');
         const r = O.readPng(unzipSync(ui.fakes.saved[0]!.bytes)['color.png']!);
         const alphaAt = (x: number, y: number) => r.data[(y * 192 + x) * 4 + 3]!;
@@ -379,62 +322,14 @@ describe('make the background transparent in one click', () => {
     it('the accent colour then shows behind the icon: the contrast check is judged against it', async () => {
         const ui = await loaded({ color: flatIcon() });
         expect(document.querySelector('[data-check-id="color.contrast"]')).toBeNull();   // the icon brings its own background
-        await ui.click('ed-img-transparent-color');
+        await removeBackground(ui);
         expect(document.querySelector('[data-check-id="color.contrast"]')).not.toBeNull();
         await ui.type('ed-accentColor', '#FFFFFF');
         expect(document.querySelector('[data-check-id="color.contrast"]')!.getAttribute('data-verdict')).toBe('warning');   // white on white
-        await ui.type('ed-accentColor', '#FFA575');
-        expect($('preview-body').textContent).toBeDefined();
-    });
-
-    it('says why when there is nothing to take away', async () => {
-        const ui = await loaded();                 // the usual icon is already see-through
-        await ui.click('ed-img-transparent-color');
-        expect($('ed-img-msg-color').hidden).toBe(false);
-        expect($('ed-img-msg-color').textContent).toContain('already see-through');
-        expect($('ed-img-color').getAttribute('data-changed')).toBe('false');
-    });
-
-    it('pressing it again says that it is already see-through, as information and not in red, and the caption names the accent colour', async () => {
-        const ui = await loaded({ color: flatIcon() });
-        await ui.click('ed-img-transparent-color');
-        expect($('ed-img-caption-color').hidden).toBe(false);
-        expect($('ed-img-caption-color').textContent).toContain('#07687d');
-        expect($('ed-img-caption-color').textContent).toContain('not part of the file');
-        await ui.click('ed-img-transparent-color');
-        expect($('ed-img-msg-color').textContent).toContain('already see-through');
-        expect($('ed-img-msg-color').classList.contains('is-info')).toBe(true);
-        await ui.type('ed-accentColor', '#FFA575');
-        expect($('ed-img-caption-color').textContent).toContain('#FFA575');   // it follows the accent colour
-    });
-
-    it('a message that is a real problem is not styled as information', async () => {
-        const gradient = encodePng({ width: 192, height: 192, colorType: 6, pixel: (x, y) => [x, y, 100, 255] });
-        const ui = await loaded({ color: gradient });
-        await ui.click('ed-img-transparent-color');
-        expect($('ed-img-msg-color').classList.contains('is-info')).toBe(false);
-        expect($('ed-img-caption-color').dataset.state).toBe('opaque');   // an opaque icon: the accent colour is not seen
-    });
-
-    it('says why when the edges are not one flat colour', async () => {
-        const gradient = encodePng({ width: 192, height: 192, colorType: 6, pixel: (x, y) => [x, y, 100, 255] });
-        const ui = await loaded({ color: gradient });
-        await ui.click('ed-img-transparent-color');
-        expect($('ed-img-msg-color').textContent).toContain('no flat colour along the edges');
-    });
-
-    it('can be undone with Revert', async () => {
-        const ui = await loaded({ color: flatIcon() });
-        await ui.click('ed-img-transparent-color');
-        await ui.click('ed-img-revert-color');
-        expect($('ed-img-color').getAttribute('data-changed')).toBe('false');
-        await ui.click('export-btn');
-        expect(corner(unzipSync(ui.fakes.saved[0]!.bytes)['color.png']!)).toEqual([7, 104, 125, 255]);
     });
 });
 
 describe('the outline icon as the left bar of Teams draws it', () => {
-    const blue = (): Uint8Array => encodePng({ width: 32, height: 32, colorType: 6, pixel: (x, y) => (x >= 8 && x < 24 && y >= 8 && y < 24 ? [43, 95, 217, 255] : [0, 0, 0, 0]) });
 
     it('says what the icon is for: the left bar, the shape only, white on see-through', async () => {
         await loaded();
@@ -443,25 +338,6 @@ describe('the outline icon as the left bar of Teams draws it', () => {
         expect(caption.textContent).toContain('left bar of Teams');
         expect(caption.textContent).toContain('only the shape');
         expect(caption.textContent).toContain('white on see-through');
-    });
-
-    it('makes the shape white: every visible pixel pure white, alpha kept, and the outline checks pass', async () => {
-        const ui = await loaded({ outline: blue() });
-        expect(document.querySelector('[data-check-id="outline.white"]')!.getAttribute('data-verdict')).toBe('fail');
-        await ui.click('ed-img-white-outline');
-        expect(document.querySelector('[data-check-id="outline.white"]')!.getAttribute('data-verdict')).toBe('pass');
-        await ui.click('export-btn');
-        const r = O.readPng(unzipSync(ui.fakes.saved[0]!.bytes)['outline.png']!);
-        expect(Array.from(r.data.slice((16 * 32 + 16) * 4, (16 * 32 + 16) * 4 + 4))).toEqual([255, 255, 255, 255]);
-        expect(r.data[3]).toBe(0);                                                          // the corner stays see-through
-    });
-
-    it('says, as information, that the shape is white already', async () => {
-        const ui = await loaded();
-        await ui.click('ed-img-white-outline');
-        expect($('ed-img-msg-outline').textContent).toContain('already white');
-        expect($('ed-img-msg-outline').classList.contains('is-info')).toBe(true);
-        expect($('ed-img-outline').getAttribute('data-changed')).toBe('false');
     });
 });
 
@@ -493,8 +369,9 @@ describe('the Changes table and the contents', () => {
 
     it('lists a replaced icon with both sizes, and the contents table marks the file', async () => {
         const ui = await loaded();
-        ui.fakes.files.set('new.png', newColor());
-        await ui.click('ed-img-pick-color');
+        await ui.click('ed-img-edit-color');
+        await ui.click('ie-add-rotate');
+        await ui.click('ie-apply');
         const r = document.querySelector('#changes-table tr[data-icon="color"]')!;
         expect(r.children[1]!.textContent).toContain('192 x 192 pixels');
         expect(r.children[2]!.textContent).toContain('192 x 192 pixels');
@@ -568,8 +445,9 @@ describe('the notice about the version', () => {
 
     it('appears for a replaced icon too, and not when the version was raised by hand', async () => {
         const ui = await loaded();
-        ui.fakes.files.set('new.png', newColor());
-        await ui.click('ed-img-pick-color');
+        await ui.click('ed-img-edit-color');
+        await ui.click('ie-add-rotate');
+        await ui.click('ie-apply');
         expect(hint()).not.toBeNull();
         await ui.type('ed-version', '2.0.0');
         expect(hint()).toBeNull();

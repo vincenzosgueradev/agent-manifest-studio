@@ -4,8 +4,6 @@
  * dragging, Apply and Cancel, refusals, the preview and the outline icon (FR-001 to FR-031).
  */
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { boot, flush, type Ui } from './helpers/ui-harness';
 import { packageBytes } from './helpers/fixture';
 import { encodePng as helperEncode } from './helpers/png-encoder';
@@ -67,7 +65,7 @@ describe('opening and closing', () => {
     it('Cancel closes it and changes nothing', async () => {
         const ui = await loaded();
         await editColour(ui);
-        await ui.click('ie-add-white');
+        await ui.click('ie-add-rotate');
         await ui.click('ie-cancel');
         expect($('ie-card').hidden).toBe(true);
         expect($('changes-none')).not.toBeNull();
@@ -78,7 +76,6 @@ describe('opening and closing', () => {
         const ui = await loaded();
         await editColour(ui);
         expect(btn('ed-img-edit-outline').disabled).toBe(true);
-        expect(btn('ed-img-outline-preset').disabled).toBe(true);
         expect($('ed-img-edit-outline').title).toContain('Another image editor is open');
         expect(btn('ed-img-edit-color').disabled).toBe(false);
         await ui.click('ie-cancel');
@@ -94,7 +91,7 @@ describe('opening and closing', () => {
     it('loading another package closes the editor and forgets its work', async () => {
         const ui = await loaded();
         await editColour(ui);
-        await ui.click('ie-add-white');
+        await ui.click('ie-add-rotate');
         ui.fakes.files.set('Other.zip', packageBytes());
         await ui.click('replace-btn');
         expect(document.getElementById('ie-card')).toBeNull();   // the page of the old package is gone
@@ -123,16 +120,22 @@ describe('the steps', () => {
         expect(document.querySelector('#ie-op-0 strong')!.textContent).toBe('Remove background');
     });
 
-    it('every tool button adds the step it names', async () => {
+    it('every tool button adds the step it names, once (the ones that clash are tried apart)', async () => {
         const ui = await loaded();
         await editColour(ui);
-        const buttons: Array<[string, string]> = [
+        const together: Array<[string, string]> = [
             ['ie-add-removeBg', 'removeBg'], ['ie-add-trim', 'trim'], ['ie-add-crop', 'crop'], ['ie-add-square', 'square'], ['ie-add-fit', 'fit'],
-            ['ie-add-resize', 'resize'], ['ie-add-rotate', 'rotate'], ['ie-add-flip-h', 'flip'], ['ie-add-flip-v', 'flip'], ['ie-add-fill', 'fill'],
-            ['ie-add-solid', 'solid'], ['ie-add-white', 'solid'], ['ie-add-black', 'solid'], ['ie-add-tone', 'tone'], ['ie-add-outline', 'outline'],
+            ['ie-add-rotate', 'rotate'], ['ie-add-flip-h', 'flip'], ['ie-add-flip-v', 'flip'], ['ie-add-fill', 'fill'], ['ie-add-solid', 'solid'],
         ];
-        for (const [id] of buttons) await ui.click(id);
-        expect(kinds()).toEqual(buttons.map(b => b[1]));
+        for (const [id] of together) await ui.click(id);
+        expect(kinds()).toEqual(together.map(b => b[1]));
+        for (const id of ['ie-add-tone', 'ie-add-outline']) expect(btn(id).disabled, id).toBe(true);   // a solid colour and a fill are in the history
+        await ui.click('ie-revert-all');
+        for (const [id, kind] of [['ie-add-tone', 'tone'], ['ie-add-outline', 'outline']] as const) {
+            await ui.click(id);
+            expect(kinds(), id).toEqual([kind]);
+            await ui.click('ie-revert-all');
+        }
     });
 
     it('editing a value changes the picture on the canvas as it is typed', async () => {
@@ -149,13 +152,14 @@ describe('the steps', () => {
     it('removing a step in the middle recomputes the rest', async () => {
         const ui = await loaded();
         await openImage(ui, 'logo.png', logoPng());
-        await ui.click('ie-add-rotate');
         await ui.click('ie-add-flip-h');
         await ui.click('ie-add-rotate');
-        expect(kinds()).toEqual(['rotate', 'flip', 'rotate']);
-        await ui.click('ie-op-0-remove');
-        expect(kinds()).toEqual(['flip', 'rotate']);
+        await ui.click('ie-add-flip-v');
+        expect(kinds()).toEqual(['flip', 'rotate', 'flip']);
         expect([canvasPixels(ui).width, canvasPixels(ui).height]).toEqual([40, 60]);
+        await ui.click('ie-op-1-remove');
+        expect(kinds()).toEqual(['flip', 'flip']);
+        expect([canvasPixels(ui).width, canvasPixels(ui).height]).toEqual([60, 40]);
     });
 
     it('a crop outside the picture says so and leaves the picture alone', async () => {
@@ -182,12 +186,12 @@ describe('the steps', () => {
 });
 
 describe('history and comparison', () => {
-    it('Undo and Redo move through the steps, and Reset empties the list', async () => {
+    it('Undo and Redo move through the steps; there is no Reset, the list is emptied by Undo', async () => {
         const ui = await loaded();
         await editColour(ui);
         expect(btn('ie-undo').disabled).toBe(true);
         expect(btn('ie-redo').disabled).toBe(true);
-        expect(btn('ie-reset').disabled).toBe(true);
+        expect(document.getElementById('ie-reset')).toBeNull();
         await ui.click('ie-add-rotate');
         await ui.click('ie-add-flip-h');
         expect(kinds()).toEqual(['rotate', 'flip']);
@@ -196,23 +200,64 @@ describe('history and comparison', () => {
         expect(btn('ie-redo').disabled).toBe(false);
         await ui.click('ie-redo');
         expect(kinds()).toEqual(['rotate', 'flip']);
-        await ui.click('ie-reset');
-        expect(kinds()).toEqual([]);
         await ui.click('ie-undo');
-        expect(kinds()).toEqual(['rotate', 'flip']);
+        await ui.click('ie-undo');
+        expect(kinds()).toEqual([]);
+        expect(btn('ie-undo').disabled).toBe(true);
     });
 
-    it('Show original draws the picture as imported', async () => {
+    it('the status bar gives the size of the picture that is on the canvas, width then height', async () => {
         const ui = await loaded();
-        await openImage(ui, 'logo.png', logoPng());
+        await openImage(ui, 'logo.png', logoPng());                 // 60 x 40
+        expect($('ie-size').textContent).toBe('60 x 40 pixels');
+        await ui.click('ie-original');
+        expect($('ie-size').textContent).toBe('192 x 192 pixels');   // the icon of the package
+    });
+
+    it('Show original draws the icon as it was in the package, says so on the picture, and Show original again goes back', async () => {
+        const ui = await loaded();
+        await openImage(ui, 'logo.png', logoPng());                 // 60 x 40: the steps start from this picture
         await ui.click('ie-add-removeBg');
-        expect(canvasPixels(ui).data[3]).toBe(0);
+        expect(canvasPixels(ui).width).toBe(60);
+        expect($('ie-view-label').hidden).toBe(true);
         await ui.click('ie-original');
         expect($('ie-original').getAttribute('aria-pressed')).toBe('true');
-        expect(canvasPixels(ui).data[3]).toBe(255);
+        expect(canvasPixels(ui).width).toBe(192);                   // the colour icon of the package, not the imported picture
+        expect($('ie-view-label').hidden).toBe(false);
+        expect($('ie-view-label').textContent).toBe('Original: the colour icon as it was in the package');
         await ui.click('ie-original');
         expect($('ie-original').getAttribute('aria-pressed')).toBe('false');
-        expect(canvasPixels(ui).data[3]).toBe(0);
+        expect(canvasPixels(ui).width).toBe(60);
+        expect($('ie-view-label').hidden).toBe(true);
+    });
+
+    it('Show original still shows the package icon after an earlier Apply, and says when it is the same as now', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        await ui.click('ie-original');
+        expect($('ie-view-label').textContent).toBe('Original: the colour icon as it was in the package (the same as now)');
+        await ui.click('ie-original');
+        await ui.click('ie-add-solid');
+        await ui.type('ie-op-0-colour', '#000000');
+        await ui.click('ie-apply');
+        await editColour(ui);                                       // the current icon is now the black one
+        const at = (): number[] => Array.from(canvasPixels(ui).data.slice((100 * 192 + 100) * 4, (100 * 192 + 100) * 4 + 3));
+        expect(at()).toEqual([0, 0, 0]);
+        await ui.click('ie-original');
+        expect(at()).toEqual([255, 255, 255]);                      // the glyph of the package
+        expect($('ie-view-label').textContent).toBe('Original: the colour icon as it was in the package');
+    });
+
+    it('while the original is shown a drag on the picture does not make a crop', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        const canvas = $('ie-canvas');
+        canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 192, height: 192, right: 192, bottom: 192, x: 0, y: 0, toJSON: () => ({}) });
+        await ui.click('ie-original');
+        canvas.dispatchEvent(new MouseEvent('pointerdown', { clientX: 10, clientY: 10, bubbles: true }));
+        canvas.dispatchEvent(new MouseEvent('pointerup', { clientX: 90, clientY: 90, bubbles: true }));
+        await flush();
+        expect(kinds()).toEqual([]);
     });
 
     it('the background and zoom switches are views only: the result does not change', async () => {
@@ -220,13 +265,13 @@ describe('history and comparison', () => {
         await openImage(ui, 'logo.png', logoPng());
         await ui.click('ie-add-removeBg');
         const before = Array.from(canvasPixels(ui).data);
-        for (const bg of ['accent', 'white', 'black', 'checker']) {
+        for (const bg of ['white', 'black', 'checker']) {
             await ui.click(`ie-bg-${bg}`);
             expect($(`ie-bg-${bg}`).getAttribute('aria-pressed')).toBe('true');
         }
-        await ui.click('ie-bg-accent');
-        expect($('ie-stage').getAttribute('style') ?? '').toContain('rgb(7, 104, 125)');
-        await ui.click('ie-zoom-200');
+        expect(document.getElementById('ie-bg-accent')).toBeNull();                       // the accent colour is not drawn behind the picture
+        expect($('ie-stage').getAttribute('style') ?? '').toBe('');
+        setZoom('200');
         expect($('ie-canvas').style.width).toBe('120px');
         await ui.click('ie-zoom-fit');
         expect($('ie-canvas').style.width).toBe('');
@@ -279,7 +324,8 @@ describe('presets', () => {
 describe('the outline icon', () => {
     it('Outline from this icon: a white silhouette at 32 x 32 that passes the outline checks', async () => {
         const ui = await loaded();
-        await ui.click('ed-img-outline-preset');
+        await ui.click('ed-img-edit-outline');
+        await ui.click('ie-preset-outline');
         expect($('ie-title-note').textContent).toContain('outline icon, 32 x 32');
         expect(kinds()).toEqual(['outline', 'trim', 'square', 'fit']);
         const p = canvasPixels(ui);
@@ -303,72 +349,31 @@ describe('the outline icon', () => {
         expect(document.getElementById('ie-tile-192')).toBeNull();
     });
 
-    it('a colour icon editor draws the four Teams sizes on the accent colour', async () => {
+    it('a colour icon editor draws the Teams sizes under the picture as the result is, never on the accent colour (amended 2026-10-29)', async () => {
         const ui = await loaded();
         await editColour(ui);
-        for (const s of [192, 96, 48, 32]) {
+        expect(document.getElementById('ie-tile-192')).toBeNull();                 // the picture on the canvas is the 192
+        for (const s of [96, 48, 32]) {
             const t = $(`ie-tile-${s}`) as HTMLCanvasElement;
             expect(ui.pixels(t)!.width).toBe(s);
+            expect(t.classList.contains('ed-checker'), String(s)).toBe(true);        // the usual icon is see-through
         }
-        expect($('ie-preview').textContent).toContain('#07687d');
+        expect($('ie-preview').textContent).toContain('The result as it is');
+        expect($('ie-preview').textContent).not.toContain('#07687d');
         expect($('ie-preview').textContent).toContain('does not reproduce exactly');
-        // the tiles are opaque: laid on the accent colour
-        expect(ui.pixels($('ie-tile-192') as HTMLCanvasElement)!.data[3]).toBe(255);
+        // the tiles keep their see-through pixels: the corner is not the accent colour
+        expect(ui.pixels($('ie-tile-96') as HTMLCanvasElement)!.data[3]).toBe(0);
+    });
+
+    it('an opaque result has no chequerboard under its tiles', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        await openImage(ui, 'solid.png', helperEncode({ width: 64, height: 64, colorType: 6, pixel: () => [200, 30, 30, 255] }));
+        for (const s of [96, 48]) expect(($(`ie-tile-${s}`) as HTMLCanvasElement).classList.contains('ed-checker'), String(s)).toBe(false);
     });
 });
 
-describe('the eyedropper', () => {
-    it('reads a pixel by its numbers, with the hex, the alpha and a copy button', async () => {
-        const ui = await loaded();
-        await openImage(ui, 'logo.png', logoPng());
-        await ui.type('ie-pick-x', '20');
-        await ui.type('ie-pick-y', '10');
-        await ui.click('ie-read');
-        expect($('ie-reading').hidden).toBe(false);
-        expect($('ie-reading-hex').textContent).toBe('#c81e1e');
-        expect($('ie-reading-info').textContent).toContain('(20, 10)');
-        expect($('ie-reading-copy').getAttribute('data-copy')).toBe('#c81e1e');
-    });
-
-    it('a transparent pixel is reported as such and cannot be sent anywhere', async () => {
-        const ui = await loaded();
-        await editColour(ui);
-        await ui.type('ie-pick-x', '0');
-        await ui.type('ie-pick-y', '0');
-        await ui.click('ie-read');
-        expect($('ie-reading-hex').textContent).toBe('transparent');
-        for (const id of ['ie-send-bg', 'ie-send-solid', 'ie-send-fill', 'ie-send-accent']) expect(btn(id).disabled).toBe(true);
-    });
-
-    it('refuses a point outside the picture', async () => {
-        const ui = await loaded();
-        await openImage(ui, 'logo.png', logoPng());
-        await ui.type('ie-pick-x', '60');
-        await ui.type('ie-pick-y', '0');
-        await ui.click('ie-read');
-        expect($('ie-message').textContent).toContain('outside the picture');
-    });
-
-    it('sends the colour to the accent colour, the solid colour, the fill and the background tool', async () => {
-        const ui = await loaded();
-        await openImage(ui, 'logo.png', logoPng());
-        await ui.type('ie-pick-x', '20');
-        await ui.type('ie-pick-y', '10');
-        await ui.click('ie-read');
-        await ui.click('ie-send-solid');
-        expect(kinds()).toEqual(['solid']);
-        expect(($('ie-op-0-colour') as HTMLInputElement).value).toBe('#c81e1e');
-        await ui.click('ie-send-fill');
-        expect(kinds()).toEqual(['solid', 'fill']);
-        await ui.click('ie-send-bg');
-        expect(kinds()).toEqual(['solid', 'fill', 'removeBg']);
-        expect(($('ie-op-2-colour') as HTMLInputElement).value).toBe('#c81e1e');
-        await ui.click('ie-send-bg');   // an existing background step is changed, not duplicated
-        expect(kinds()).toEqual(['solid', 'fill', 'removeBg']);
-        await ui.click('ie-send-accent');
-        expect((document.getElementById('ed-accentColor') as HTMLInputElement).value).toBe('#c81e1e');
-    });
-
+describe('the pointer on the canvas', () => {
     it('the pointer maps to picture pixels', () => {
         const rect = { left: 10, top: 20, width: 120, height: 80 };
         expect(toPixel(10, 20, rect, 60, 40)).toEqual({ x: 0, y: 0 });
@@ -378,19 +383,6 @@ describe('the eyedropper', () => {
         expect(toPixel(130, 30, rect, 60, 40)).toBeNull();
         expect(toPixel(50, 100, rect, 60, 40)).toBeNull();
         expect(toPixel(50, 50, { left: 0, top: 0, width: 0, height: 0 }, 60, 40)).toBeNull();
-    });
-
-    it('with the eyedropper on, a click on the canvas reads the pixel under it', async () => {
-        const ui = await loaded();
-        await openImage(ui, 'logo.png', logoPng());
-        const canvas = $('ie-canvas');
-        canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 120, height: 80, right: 120, bottom: 80, x: 0, y: 0, toJSON: () => ({}) });
-        await ui.click('ie-pick');
-        expect($('ie-pick').getAttribute('aria-pressed')).toBe('true');
-        canvas.dispatchEvent(new MouseEvent('pointerdown', { clientX: 50, clientY: 30, bubbles: true }));
-        await flush();
-        expect($('ie-reading-info').textContent).toContain('(25, 15)');
-        expect($('ie-reading-hex').textContent).toBe('#c81e1e');
     });
 });
 
@@ -454,12 +446,10 @@ describe('colour tools', () => {
         expect($('ie-op-0-colour-swatch').style.background).toContain('rgb(255, 255, 255)');
     });
 
-    it('the view switches are styled as segments, and the empty suggestion swatch is hidden', async () => {
+    it('the view switches are styled as segments', async () => {
         const ui = await loaded();
         await editColour(ui);
         for (const id of ['ie-bg-checker', 'ie-zoom-fit']) expect($(id).classList.contains('segment')).toBe(true);
-        expect($('ie-accent-swatch').hidden).toBe(true);
-        expect(btn('ie-accent-accept').disabled).toBe(true);
     });
 
     it('the steps that are easy to misread say what they do, and what they do not', async () => {
@@ -483,13 +473,15 @@ describe('colour tools', () => {
         expect(document.getElementById('ie-outline-note')).toBeNull();   // not on the colour icon
     });
 
-    it('Make white and Make black', async () => {
+    it('Solid colour gives every visible pixel the colour typed, black or white included (there is no Make white or Make black)', async () => {
         const ui = await loaded();
         await openImage(ui, 'logo.png', logoPng());
-        await ui.click('ie-add-black');
+        for (const id of ['ie-add-white', 'ie-add-black', 'ie-add-resize']) expect(document.getElementById(id), id).toBeNull();
+        await ui.click('ie-add-solid');
+        await ui.type('ie-op-0-colour', '#000000');
         const centre = (20 * 60 + 30) * 4;
         expect(Array.from(canvasPixels(ui).data.slice(centre, centre + 3))).toEqual([0, 0, 0]);
-        await ui.click('ie-add-white');
+        await ui.type('ie-op-0-colour', '#ffffff');
         expect(Array.from(canvasPixels(ui).data.slice(centre, centre + 3))).toEqual([255, 255, 255]);
     });
 
@@ -512,17 +504,6 @@ describe('colour tools', () => {
         await ui.click('ie-add-fill');
         expect(($('ie-op-0-colour') as HTMLInputElement).value).toBe('#07687d');
         expect(canvasPixels(ui).data[3]).toBe(255);
-    });
-
-    it('Suggest accent colour proposes the main colour and applies it only when accepted', async () => {
-        const ui = await loaded();
-        await openImage(ui, 'logo.png', logoPng());
-        expect(btn('ie-accent-accept').disabled).toBe(true);
-        await ui.click('ie-accent-suggest');
-        expect($('ie-accent-hex').textContent).toBe('#c81e1e');
-        expect((document.getElementById('ed-accentColor') as HTMLInputElement).value).toBe('#07687d');
-        await ui.click('ie-accent-accept');
-        expect((document.getElementById('ed-accentColor') as HTMLInputElement).value).toBe('#c81e1e');
     });
 });
 
@@ -629,25 +610,14 @@ describe('save as PNG and the accessibility of the editor', () => {
     });
 });
 
-describe('the picture stays in view while the steps are scrolled', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
-    /** The text of every rule of the selector, joined (the one-column media rule is another rule of the same selector). */
-    const rule = (selector: string): string[] => {
-        const start = css.split(selector + ' {');
-        // the text between "selector {" and the next closing brace, for every rule of that selector
-        return start.slice(1).map(part => part.slice(0, part.indexOf('}')));
-    };
+/** Moves the zoom slider, as a hand does. */
+function setZoom(value: string): void {
+    const slider = $('ie-zoom') as HTMLInputElement;
+    slider.value = value;
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+}
 
-    it('the left column is sticky, and nothing around it clips it', () => {
-        expect(rule('.ie-left').some(r => /position:\s*sticky/.test(r))).toBe(true);
-        expect(rule('.ie-left').some(r => /align-self:\s*start/.test(r))).toBe(true);
-        expect(rule('#ie-card').some(r => /overflow:\s*visible/.test(r))).toBe(true);   // an overflow:hidden parent would stop the sticking
-    });
-
-    it('is not sticky in the one-column layout, where it would cover the steps', () => {
-        expect(css).toMatch(/@media \(max-width: 900px\)[^\n]*\.ie-left \{ position: static; \}/);
-    });
-
+describe('the automatic colour of a step', () => {
     it('a colour that is automatic is dimmed in the picker, and not when it is chosen', async () => {
         const ui = await loaded();
         await editColour(ui);

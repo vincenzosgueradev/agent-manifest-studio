@@ -1,12 +1,12 @@
 /**
- * The preview (FR-007 to FR-010): the colour icon on the accent colour, the outline icon on a light
+ * The preview (FR-007 to FR-010): the colour icon as it is, the outline icon on a light
  * and a dark app bar, and the names. It is an approximation and says so next to itself.
  */
 
 import { card } from './card';
 import { clear, el } from './dom';
 import { icon, type IconName } from '../icons';
-import { flattenOnAccent, parseAccent } from '../services/preview';
+import { parseAccent } from '../services/preview';
 import type { IconInfo, IconSet, NameValue } from '../types';
 
 export interface PreviewInput {
@@ -89,18 +89,20 @@ export function renderPreview(body: HTMLElement, notice: HTMLElement, p: Preview
     clear(notice);
     const grid = body;
 
-    // Colour icon on the accent colour.
+    // The colour icon as it is.
     const color = p.icons.color;
     const colorProblem = iconProblem(color, 'colour icon');
     if (colorProblem || color.png?.kind !== 'ok') {
         grid.append(item('image', 'Colour icon', null, el('p', { class: 'readonly-reason', id: 'preview-color-problem' }, colorProblem ?? 'The colour icon cannot be drawn.')));
     } else {
         const { width, height } = color.png.header;
+        // The icon is drawn as it is. Nothing documents where, if anywhere, a surface draws the accent colour behind a
+        // see-through icon, so it is not drawn behind it here (feature 007, amendment 2026-10-29).
         const accent = p.accent === null ? null : parseAccent(p.accent);
-        const cls = accent ? 'icon-canvas' : 'icon-canvas icon-canvas--checker';
-        const pixels = accent ? flattenOnAccent(color.png.rgba, accent) : color.png.rgba;
+        const cls = 'icon-canvas icon-canvas--checker';
+        const pixels = color.png.rgba;
         const caption = accent
-            ? `Colour icon on the accent colour ${p.accent}, at the sizes Teams uses`
+            ? `Colour icon at the sizes Teams uses. The accent colour ${p.accent} is saved in the manifest; it is not drawn behind the icon here, because the documentation does not say where Teams draws it.`
             : (p.accent === null
                 ? 'The manifest has no accent colour: the icon is shown as it is, on a checkerboard'
                 : `The accent colour "${p.accent}" is not a valid #RRGGBB colour: the icon is shown as it is, on a checkerboard`);

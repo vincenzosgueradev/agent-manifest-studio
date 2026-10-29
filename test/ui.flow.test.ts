@@ -111,26 +111,34 @@ describe('the manifest text is kept as it is', () => {
 
 import { colorIcon, outlineIcon } from './helpers/fixture';
 import { encodePng } from './helpers/png-encoder';
-import { flattenOracle } from './helpers/oracle';
 
-describe('preview: colour icon on the accent colour (FR-007)', () => {
-    it('transparent areas take the accent colour, opaque areas are kept', async () => {
+describe('preview: the colour icon as it is, never on the accent colour (FR-007, amended 2026-10-29)', () => {
+    it('transparent areas stay see-through on a checkerboard, opaque areas are kept', async () => {
         const ui = await boot();
         await ui.open('a.zip', packageBytes());
         const px = ui.pixels(ui.$<HTMLCanvasElement>('preview-color-192'))!;
         expect([px.width, px.height]).toEqual([192, 192]);
         const at = (x: number, y: number) => Array.from(px.data.slice((y * 192 + x) * 4, (y * 192 + x) * 4 + 4));
-        expect(at(0, 0)).toEqual([7, 104, 125, 255]);          // #07687d under a transparent corner
+        expect(at(0, 0)).toEqual([0, 0, 0, 0]);               // the corner is see-through, not #07687d
         expect(at(100, 100)).toEqual([255, 255, 255, 255]);   // the opaque glyph
+        expect(ui.$('preview-color-192').className).toContain('icon-canvas--checker');
     });
 
-    it('every pixel of a half-transparent background equals the oracle', async () => {
+    it('a half-transparent background keeps its own pixels, alpha included', async () => {
         const ui = await boot();
         await ui.open('a.zip', packageBytes({ color: colorIcon([200, 50, 10, 128]), manifest: { accent: '#FF8040' } }));
         const px = ui.pixels(ui.$<HTMLCanvasElement>('preview-color-192'))!;
-        const bg = [255, 128, 64];
-        const corner = Array.from(px.data.slice(0, 4));
-        expect(corner).toEqual([flattenOracle(200, 128, bg[0]!), flattenOracle(50, 128, bg[1]!), flattenOracle(10, 128, bg[2]!), 255]);
+        expect(Array.from(px.data.slice(0, 4))).toEqual([200, 50, 10, 128]);
+    });
+
+    it('the caption says that the accent colour is saved but not drawn behind the icon, and why', async () => {
+        const ui = await boot();
+        await ui.open('a.zip', packageBytes());
+        const text = ui.text('preview-body');
+        expect(text).toContain('The accent colour #07687d is saved in the manifest');
+        expect(text).toContain('not drawn behind the icon here');
+        expect(text).toContain('does not say where');
+        expect(text).not.toContain('on the accent colour #07687d, at the sizes');
     });
 
     it('also draws the small size, from the same pixels', async () => {

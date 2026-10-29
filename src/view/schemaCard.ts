@@ -44,6 +44,7 @@ const HERO_ICON: Record<SchemaReport['state'], IconName> = { valid: 'check-circl
 const HERO_TONE: Record<SchemaReport['state'], 'success' | 'warning' | 'info'> = { valid: 'success', invalid: 'warning', 'no-schema': 'info' };
 
 export function renderSchema(body: HTMLElement, chipSlot: HTMLElement, r: SchemaReport): void {
+    (body.closest('section') as HTMLElement | null)?.removeAttribute('hidden');
     clear(body);
     clear(chipSlot);
     const chipText = r.state === 'valid' ? `follows v${r.version}` : r.state === 'invalid' ? count(r.problems.length) : 'not validated';
@@ -88,6 +89,7 @@ export function renderSchema(body: HTMLElement, chipSlot: HTMLElement, r: Schema
 
 /** Forget what is drawn (a new package starts clean). */
 export function resetSchema(body: HTMLElement, chipSlot: HTMLElement): void {
+    (body.closest('section') as HTMLElement | null)?.setAttribute('hidden', '');
     clear(body);
     clear(chipSlot);
 }
