@@ -208,12 +208,10 @@ describe('invalid edits block, and are named', () => {
         expect(planned.plan.manifest.accentColor).toBe('#111111');
     });
 
-    it('equal short and full names are blocked by the existing check', () => {
+    it('equal short and full names are only a warning: the export is not blocked', () => {
         const ctx = ctxFor({});
         const r = exportPackage(ctx, null, edits({ fields: { 'name.full': 'Sales Helper [DEV]' } }));
-        expect(r.ok).toBe(false);
-        if (r.ok || r.reason !== 'blocked') throw new Error('expected blocked');
-        expect(r.blocking.map(c => c.id)).toContain('name.distinct');
+        expect(r.ok).toBe(true);
     });
 });
 

@@ -147,6 +147,7 @@ describe('each rule broken alone changes exactly the expected checks', () => {
         expect(changed(BASE, checksFor(opts))).toEqual([...expectedChanged].sort());
     });
 
+it('identical short and full names are a warning, never a failure (Teams accepts them)', () => {        expect(verdicts(checksFor({ manifest: { nameShort: 'Same', nameFull: 'Same' } }))['name.distinct']).toBe('warning');        expect(verdicts(checksFor({ manifest: { nameShort: 'Short', nameFull: 'Longer name' } }))['name.distinct']).toBe('pass');    });
     it('a missing full name is fine (it is optional)', () => {
         expect(changed(BASE, checksFor({ manifest: { nameFull: null } }))).toEqual([]);
     });

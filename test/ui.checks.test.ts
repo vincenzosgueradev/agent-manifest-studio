@@ -141,4 +141,24 @@ describe('one-click fixes (specs/011-automatic-check-fixes)', () => {
         expect(document.getElementById('checks-undo')!.hidden).toBe(false);
         expect(document.getElementById('checks-fix-all-btn')!.hidden).toBe(true);
     });
+
+    it('equal names: a warning with an "Advice" badge, an explanation and no Fix it; a passing row has neither', async () => {
+        const ui = await boot();
+        await ui.open('a.zip', packageBytes({ manifest: { nameShort: 'Same', nameFull: 'Same' } }));
+        const r = row('name.distinct');
+        expect(r.dataset.verdict).toBe('warning');
+        expect(r.querySelector('.col-check .chip')?.textContent).toBe('Advice');
+        expect(r.textContent).toContain('Why only a warning');
+        expect(r.textContent).toContain('Teams accepts identical names');
+        expect(r.querySelector('[data-fix]')).toBeNull();
+        expect(document.getElementById('checks-fix-all-btn')!.hidden).toBe(true);
+        expect(row('name.short.length').querySelector('.chip')).toBeNull();
+    });
+
+    it('different names: no badge and no explanation', async () => {
+        const ui = await boot();
+        await ui.open('a.zip', packageBytes());
+        expect(row('name.distinct').querySelector('.chip')).toBeNull();
+        expect(row('name.distinct').textContent).not.toContain('Why only a warning');
+    });
 });

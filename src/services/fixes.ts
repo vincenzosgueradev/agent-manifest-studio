@@ -33,7 +33,7 @@ export const FIXES: Readonly<Record<string, Fix>> = {
     'color32.size-px': { text: 'The small colour icon is optional and should be 32 x 32 pixels. Replace the file in the zip with a 32 x 32 PNG, or ignore this warning.', step: null },
     'name.short.length': { text: 'The short name is too long. In Details, shorten "Short name" to at most 30 characters.', step: 2 },
     'name.full.length': { text: 'The full name is too long. In Details, shorten "Full name" to at most 100 characters.', step: 2 },
-    'name.distinct': { text: 'The short and the full name are the same. In Details, change "Full name" so that it says more than the short name, for example what the agent does.', step: 2 },
+    'name.distinct': { text: 'The short and the full name are the same. Teams accepts that, but it is better if the full name says more. In Details, you can change "Full name" so that it says more than the short name, for example what the agent does.', step: 2 },
     'description.short.length': { text: 'The short description is missing or too long. In Details, write "Short description" in at most 80 characters.', step: 2 },
     'description.full.length': { text: 'The full description is missing or too long. In Details, write "Full description" in at most 4000 characters; it cannot be empty.', step: 2 },
     'accent.hex': { text: 'The accent colour is not a valid colour. In Look, type it as # followed by six hexadecimal digits (for example #07687d) or pick it with the colour picker.', step: 3 },

@@ -187,9 +187,9 @@ export function runChecks(manifest: ManifestView, icons: IconSet, manifestText?:
     out.push(nameCheck('name.full.length', 'Full name length', manifest.nameFull, NAME_FULL_MAX, false));
     const both = manifest.nameShort.kind !== 'missing' && manifest.nameFull.kind !== 'missing';
     const same = both && manifest.nameShort.raw === manifest.nameFull.raw;
-    out.push(check('name.distinct', 'Short and full name differ', same ? 'fail' : 'pass',
+    out.push(check('name.distinct', 'Short and full name differ', same ? 'warning' : 'pass',
         same ? `both are "${manifest.nameShort.raw}"` : (both ? 'different' : 'only one of them is declared'),
-        'the two values must be different', 'Does not prove the names mean something to users.'));
+        'the two values should be different (Teams accepts identical ones)', 'Does not prove the names mean something to users.'));
 
     out.push(descriptionCheck('description.short.length', 'Short description length', manifest.descriptionShort, DESC_SHORT_MAX));
     out.push(descriptionCheck('description.full.length', 'Full description length', manifest.descriptionFull, DESC_FULL_MAX));

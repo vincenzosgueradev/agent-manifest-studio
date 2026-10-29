@@ -26,6 +26,11 @@ const GROUPS: readonly Group[] = [
 
 const TONE: Record<Verdict, Tone> = { pass: 'success', warning: 'warning', fail: 'error' };
 
+/** Checks that are advice, not a Teams rule: a warning here never blocks saving, and the tool has no automatic fix for it. */
+const ADVICE: Record<string, string> = {
+    'name.distinct': 'Advice only: Teams accepts identical names, so saving is not blocked. There is no automatic fix because only you know what the full name should say. Leave it as it is if you are happy with it.',
+};
+
 /** Whether the rule and the limits of the rows that pass are shown too; kept while the user moves between steps. */
 let showDetails = false;
 
@@ -56,11 +61,12 @@ function rowOf(c: Check): HTMLElement {
     return el('li', { class: 'check-row', 'data-check-id': c.id, 'data-verdict': c.verdict },
         el('div', { class: 'chk-main' },
             el('span', { class: 'col-status' }, indicator(c.verdict), el('span', { class: `verdict-word verdict--${c.verdict}` }, VERDICT_WORD[c.verdict])),
-            el('span', { class: 'col-check' }, c.label),
+            el('span', { class: 'col-check' }, c.label, c.verdict !== 'pass' && c.id in ADVICE ? chip('Advice', 'neutral', 'Not a Teams rule: saving is not blocked') : null),
             el('span', { class: 'col-found check-found', title: c.found }, c.found)),
         el('div', { class: 'chk-more', hidden: !open },
             detail('It should be', c.expected),
             fixOf(c),
+            c.verdict !== 'pass' && c.id in ADVICE ? detail('Why only a warning', ADVICE[c.id]!) : null,
             detail('This does not prove', c.notProven)));
 }
 

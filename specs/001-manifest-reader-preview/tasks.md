@@ -113,7 +113,7 @@ description: "Task list for feature 001: Manifest Reader, Preview and Name Suffi
 
 ### Implementation for User Story 3
 
-- [X] T038 [US3] Implement `src/services/checks.ts` `runChecks(pkg, manifest, icons)` returning one `Check` per id in stable order, with the thresholds from `limits.ts` (never literals), `outline.white` as "every pixel with alpha above 0 has RGB 255,255,255", `accent.hex` as `#` plus exactly six hexadecimal digits, `name.distinct` failing when short equals full, unsupported or undecodable icons reported as a warning that says the tool could not draw them and that Teams may still accept them
+- [X] T038 [US3] Implement `src/services/checks.ts` `runChecks(pkg, manifest, icons)` returning one `Check` per id in stable order, with the thresholds from `limits.ts` (never literals), `outline.white` as "every pixel with alpha above 0 has RGB 255,255,255", `accent.hex` as `#` plus exactly six hexadecimal digits, `name.distinct` a warning (not a failure: Teams accepts identical names) when short equals full, unsupported or undecodable icons reported as a warning that says the tool could not draw them and that Teams may still accept them
 - [X] T039 [P] [US3] Implement `src/view/checks.ts` (rows with CSS-shape indicators from `src/icons.ts`, no emoji, details expander for `notProven`) and wire it into `src/app.ts`
 - [X] T040 [US3] Run `npx tsc --noEmit`, `npm run build`, `npm test`; fix until T036-T037 pass
 
