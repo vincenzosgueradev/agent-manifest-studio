@@ -185,6 +185,59 @@ describe('the steps', () => {
     });
 });
 
+describe('a step compacts to its head once another is open', () => {
+    const isOpen = (i: number): boolean => $(`ie-op-${i}-toggle`).getAttribute('aria-expanded') === 'true';
+    const bodyHidden = (i: number): boolean => ($(`ie-op-${i}-body`) as HTMLElement).hidden;
+
+    it('the step just added is open, in full; a step added after it compacts it to its head', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        await ui.click('ie-add-removeBg');
+        expect(isOpen(0)).toBe(true);
+        expect(bodyHidden(0)).toBe(false);
+        await ui.click('ie-add-rotate');
+        expect(isOpen(0)).toBe(false);
+        expect(bodyHidden(0)).toBe(true);
+        expect(isOpen(1)).toBe(true);
+        expect(bodyHidden(1)).toBe(false);
+    });
+
+    it('a click on the head of a compacted step opens it and compacts the one that was open', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        await ui.click('ie-add-removeBg');
+        await ui.click('ie-add-rotate');
+        await ui.click('ie-op-0-toggle');
+        expect(isOpen(0)).toBe(true);
+        expect(isOpen(1)).toBe(false);
+        expect(bodyHidden(1)).toBe(true);
+    });
+
+    it('a click on the head of the open step compacts it, leaving every step closed', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        await ui.click('ie-add-removeBg');
+        await ui.click('ie-op-0-toggle');
+        expect(isOpen(0)).toBe(false);
+        expect(bodyHidden(0)).toBe(true);
+    });
+
+    it('removing the open step leaves none open; removing a step before it keeps it open', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        await ui.click('ie-add-removeBg');
+        await ui.click('ie-add-rotate');
+        await ui.click('ie-add-tone');
+        expect(isOpen(2)).toBe(true);
+        await ui.click('ie-op-0-remove');                 // a step before the open one: it stays the same step, now at index 1
+        expect(kinds()).toEqual(['rotate', 'tone']);
+        expect(isOpen(1)).toBe(true);
+        await ui.click('ie-op-1-remove');                  // the open step itself
+        expect(kinds()).toEqual(['rotate']);
+        expect(isOpen(0)).toBe(false);
+    });
+});
+
 describe('history and comparison', () => {
     it('Undo and Redo move through the steps; there is no Reset, the list is emptied by Undo', async () => {
         const ui = await loaded();
@@ -449,7 +502,7 @@ describe('colour tools', () => {
     it('the view switches are styled as segments', async () => {
         const ui = await loaded();
         await editColour(ui);
-        for (const id of ['ie-bg-checker', 'ie-zoom-fit']) expect($(id).classList.contains('segment')).toBe(true);
+        for (const id of ['ie-bg-checker']) expect($(id).classList.contains('segment')).toBe(true);
     });
 
     it('the steps that are easy to misread say what they do, and what they do not', async () => {
@@ -610,11 +663,14 @@ describe('save as PNG and the accessibility of the editor', () => {
     });
 });
 
-/** Moves the zoom slider, as a hand does. */
+/** Moves the zoom to a value, as a hand would: the + and - buttons over the canvas, from the value shown now; always redraws, even when already there. */
 function setZoom(value: string): void {
-    const slider = $('ie-zoom') as HTMLInputElement;
-    slider.value = value;
-    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    const target = Math.min(200, Math.max(10, Number(value)));
+    const shown = $('ie-zoom-value').textContent;
+    let current = shown === 'Fit' ? 100 : Number(shown!.replace('%', ''));
+    if (current === target) { const [a, b] = target < 200 ? ['ie-zoom-in-float', 'ie-zoom-out-float'] : ['ie-zoom-out-float', 'ie-zoom-in-float']; $(a).click(); $(b).click(); return; }
+    while (current < target) { $('ie-zoom-in-float').click(); current += 10; }
+    while (current > target) { $('ie-zoom-out-float').click(); current -= 10; }
 }
 
 describe('the automatic colour of a step', () => {

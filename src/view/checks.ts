@@ -8,6 +8,7 @@
 import { chip, type Tone } from './card';
 import { clear, el } from './dom';
 import { icon, indicator, VERDICT_WORD, type IconName } from '../icons';
+import { canAutoFix } from '../services/autofix';
 import { fixFor, STEP_NAME } from '../services/fixes';
 import type { Check, Verdict } from '../types';
 
@@ -37,10 +38,17 @@ function fixOf(c: Check): HTMLElement | null {
     if (c.verdict === 'pass') return null;
     const fix = fixFor(c.id);
     if (!fix) return null;
+    const fixable = canAutoFix(c);
+    const actions = fixable || fix.step !== null
+        ? el('div', { class: 'chk-fix-actions' },
+            fixable ? el('button', { type: 'button', class: 'btn btn--primary btn--sm', 'data-fix': c.id },
+                icon('wand', 'icon--xs'), 'Fix it') : null,
+            fix.step === null ? null : el('button', { type: 'button', class: 'btn btn--secondary btn--sm', 'data-goto': String(fix.step) },
+                icon('arrow-right', 'icon--xs'), `Go to ${STEP_NAME[fix.step]}`))
+        : null;
     return el('div', { class: 'chk-fix', 'data-fix-for': c.id },
         el('p', { class: 'chk-line chk-line--fix' }, el('span', { class: 'chk-line-label' }, 'How to fix it'), fix.text),
-        fix.step === null ? null : el('button', { type: 'button', class: 'btn btn--secondary btn--sm', 'data-goto': String(fix.step) },
-            icon('arrow-right', 'icon--xs'), `Go to ${STEP_NAME[fix.step]}`));
+        actions);
 }
 
 function rowOf(c: Check): HTMLElement {
@@ -76,12 +84,15 @@ export function renderChecks(container: HTMLElement, summary: HTMLElement, check
         showDetails = !showDetails;
         renderChecks(container, summary, checks);
     });
+    const anyFixable = checks.some(c => c.verdict !== 'pass' && canAutoFix(c));
+    const fixAll = el('button', { id: 'checks-fix-all-btn', type: 'button', class: 'btn btn--primary btn--sm', hidden: !anyFixable },
+        icon('wand', 'icon--xs'), 'Fix everything');
     const strip = el('div', { class: 'chk-strip' },
         chip(`${count('pass')} passed`, 'success'),
         count('warning') > 0 ? chip(`${count('warning')} with a warning`, 'warning') : null,
         count('fail') > 0 ? chip(`${count('fail')} failed`, 'error') : null,
         el('span', { class: 'chk-spacer' }),
-        toggle);
+        fixAll, toggle);
     container.append(strip);
 
     const groups = el('div', { class: 'chk-groups' });
@@ -96,4 +107,16 @@ export function renderChecks(container: HTMLElement, summary: HTMLElement, check
             el('ul', { class: 'chk-list' }, ...items.map(rowOf))));
     }
     container.append(groups);
+}
+
+/** The banner a fix (single or "Fix everything") leaves behind until the user does something else
+ * (FR-009, research.md §6): what changed, and an "Undo" that restores the snapshot taken before it ran. */
+export function renderUndo(container: HTMLElement, lastFix: { summary: string } | null): void {
+    clear(container);
+    container.hidden = lastFix === null;
+    if (lastFix === null) return;
+    container.append(el('div', { class: 'chk-undo', role: 'status' },
+        el('span', { class: 'chk-undo-text' }, lastFix.summary),
+        el('button', { id: 'checks-undo-btn', type: 'button', class: 'btn btn--secondary btn--sm' },
+            icon('undo', 'icon--xs'), 'Undo')));
 }

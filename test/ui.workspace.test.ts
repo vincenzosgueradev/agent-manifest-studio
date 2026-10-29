@@ -21,10 +21,14 @@ async function loaded(): Promise<Ui> {
     return ui;
 }
 
+/** Moves the zoom to a value, as a hand would: the + and - buttons over the canvas, from the value shown now; always redraws, even when already there. */
 const setZoom = (value: string): void => {
-    const slider = $('ie-zoom') as HTMLInputElement;
-    slider.value = value;
-    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    const target = Math.min(200, Math.max(10, Number(value)));
+    const shown = $('ie-zoom-value').textContent;
+    let current = shown === 'Fit' ? 100 : Number(shown!.replace('%', ''));
+    if (current === target) { const [a, b] = target < 200 ? ['ie-zoom-in-float', 'ie-zoom-out-float'] : ['ie-zoom-out-float', 'ie-zoom-in-float']; $(a).click(); $(b).click(); return; }
+    while (current < target) { $('ie-zoom-in-float').click(); current += 10; }
+    while (current > target) { $('ie-zoom-out-float').click(); current -= 10; }
 };
 const wheel = (init: WheelEventInit): WheelEvent => {
     const e = new WheelEvent('wheel', { bubbles: true, cancelable: true, ...init });
@@ -68,7 +72,7 @@ describe('the layout of the workspace (FR-001, FR-002, FR-016)', () => {
         const card = $('ie-card');
         expect(card.getAttribute('role')).toBe('dialog');
         expect(card.getAttribute('aria-label')).toBe('Image editor');
-        expect([...card.children].map(c => c.className.split(' ')[0])).toEqual(['ie-bar-top', 'ie-notes', 'ie-main', 'ie-statusbar']);
+        expect([...card.children].map(c => c.className.split(' ')[0])).toEqual(['ie-bar-top', 'ie-notes', 'ie-main', 'ie-statusbar', 'guide-overlay']);
         expect(card.querySelector('.ie-bar-top h3')!.textContent).toBe('Image editor');
     });
 
@@ -96,14 +100,15 @@ describe('the layout of the workspace (FR-001, FR-002, FR-016)', () => {
         const ui = await loaded();
         await ui.click('ed-img-edit-color');
         const ids = [...document.querySelectorAll('#ie-card .ie-bar-top button')].map(b => b.id);
-        expect(ids).toEqual(['ie-open-other', 'ie-save-png', 'ie-bg-checker', 'ie-bg-white', 'ie-bg-black', 'ie-grid', 'ie-original', 'ie-undo', 'ie-redo', 'ie-revert-all', 'ie-cancel', 'ie-apply']);
+        expect(ids).toEqual(['ie-open-other', 'ie-save-png', 'ie-bg-checker', 'ie-bg-white', 'ie-bg-black', 'ie-grid', 'ie-grid-low', 'ie-grid-medium', 'ie-grid-high', 'ie-original', 'ie-undo', 'ie-redo', 'ie-revert-all', 'ie-cancel', 'ie-apply']);
     });
 
-    it('the status bar has the size, the pointer position and the zoom, in that order (FR-019)', async () => {
+    it('the status bar has the size and the pointer position (FR-019); the zoom floats over the canvas', async () => {
         const ui = await loaded();
         await ui.click('ed-img-edit-color');
         const parts = [...document.querySelectorAll('#ie-card .ie-statusbar > *')].map(e => e.id || e.getAttribute('data-group') || e.className);
-        expect(parts).toEqual(['ie-size', 'ie-pos', 'ie-spacer', 'zoom']);
+        expect(parts).toEqual(['ie-size', 'ie-pos', 'ie-spacer']);
+        expect(document.querySelector('#ie-card .ie-canvas-area .ie-zoom-float')).not.toBeNull();
     });
 });
 
@@ -187,18 +192,17 @@ describe('the pixel reader and the eyedropper are gone (FR-005)', () => {
 });
 
 describe('the zoom, from 10 to 200 % (FR-006, FR-007, FR-015)', () => {
-    it('has a slider from 10 to 200 in steps of 10, a value and Fit; no 100 % button', async () => {
+    it('has Fit and the + / - buttons over the canvas, with a value; no slider and no 100 % button', async () => {
         const ui = await loaded();
         await ui.click('ed-img-edit-color');
-        const slider = $('ie-zoom') as HTMLInputElement;
-        expect(slider.type).toBe('range');
-        expect([slider.min, slider.max, slider.step]).toEqual(['10', '200', '10']);
-        expect(slider.getAttribute('aria-label')).toBe('Zoom');
+        expect(document.getElementById('ie-zoom')).toBeNull();            // the slider is gone: Fit and the steppers cover the whole range
+        expect($('ie-zoom-out-float').getAttribute('aria-label')).toBe('Zoom out');
+        expect($('ie-zoom-in-float').getAttribute('aria-label')).toBe('Zoom in');
         expect($('ie-zoom-value').textContent).toBe('Fit');
         expect($('ie-zoom-fit').getAttribute('aria-pressed')).toBe('true');
     });
 
-    it('the slider sets the size of the picture and shows the value', async () => {
+    it('the + and - buttons set the size of the picture, ten per cent at a time, and show the value', async () => {
         const ui = await loaded();
         await ui.click('ed-img-edit-color');
         setZoom('150');
@@ -213,15 +217,18 @@ describe('the zoom, from 10 to 200 % (FR-006, FR-007, FR-015)', () => {
         expect($('ie-zoom-value').textContent).toBe('10%');
     });
 
-    it('a value above 200 is brought back to 200', async () => {
+    it('the + button stops at 200, disabled; the - button stops at 10, disabled', async () => {
         const ui = await loaded();
         await ui.click('ed-img-edit-color');
-        setZoom('800');
+        setZoom('200');
         expect($('ie-zoom-value').textContent).toBe('200%');
-        expect($('ie-canvas').style.width).toBe('384px');
+        expect(($('ie-zoom-in-float') as HTMLButtonElement).disabled).toBe(true);
+        setZoom('10');
+        expect($('ie-zoom-value').textContent).toBe('10%');
+        expect(($('ie-zoom-out-float') as HTMLButtonElement).disabled).toBe(true);
     });
 
-    it('the slider at 100 shows the picture at its own size; Fit goes back to filling the area', async () => {
+    it('100 % shows the picture at its own size; Fit goes back to filling the area', async () => {
         const ui = await loaded();
         await ui.click('ed-img-edit-color');
         setZoom('200');
@@ -272,16 +279,16 @@ describe('the zoom, from 10 to 200 % (FR-006, FR-007, FR-015)', () => {
         expect($('ie-zoom-value').textContent).toBe('110%');
     });
 
-    it('Fit shows the size it gives the picture, rounded to a step and kept within the slider, and the wheel starts from it', async () => {
+    it('Fit shows the size it gives the picture, rounded to a step and kept within the range, and the wheel starts from it', async () => {
         const ui = await loaded();
         await ui.click('ed-img-edit-color');
         const canvas = $('ie-canvas');
         canvas.getBoundingClientRect = () => rectOf(384, 384);
         await ui.click('ie-zoom-fit');                                    // draws again with the measure
-        expect(($('ie-zoom') as HTMLInputElement).value).toBe('200');
+        expect($('ie-zoom-value').dataset.fitPct).toBe('200');
         canvas.getBoundingClientRect = () => rectOf(600, 288);
         await ui.click('ie-zoom-fit');
-        expect(($('ie-zoom') as HTMLInputElement).value).toBe('150');     // the smaller side decides: the whole picture is in view
+        expect($('ie-zoom-value').dataset.fitPct).toBe('150');     // the smaller side decides: the whole picture is in view
         canvas.getBoundingClientRect = () => rectOf(288, 288);
         await ui.click('ie-zoom-fit');
         wheel({ ctrlKey: true, deltaY: -100 });
@@ -289,10 +296,10 @@ describe('the zoom, from 10 to 200 % (FR-006, FR-007, FR-015)', () => {
         expect($('ie-zoom-value').textContent).toBe('160%');
         canvas.getBoundingClientRect = () => rectOf(4, 4);
         await ui.click('ie-zoom-fit');
-        expect(($('ie-zoom') as HTMLInputElement).value).toBe('10');      // never under the lowest step
+        expect($('ie-zoom-value').dataset.fitPct).toBe('10');      // never under the lowest step
         canvas.getBoundingClientRect = () => rectOf(1920, 1920);
         await ui.click('ie-zoom-fit');
-        expect(($('ie-zoom') as HTMLInputElement).value).toBe('200');     // nor above the highest
+        expect($('ie-zoom-value').dataset.fitPct).toBe('200');     // nor above the highest
     });
 
     it('the wheel alone is left to the scrolling of the picture', async () => {
@@ -324,11 +331,11 @@ describe('the zoom, from 10 to 200 % (FR-006, FR-007, FR-015)', () => {
         expect(Array.from(ui.pixels($('ie-canvas') as HTMLCanvasElement)!.data)).toEqual(before);
     });
 
-    it('the zoom group is in the status bar and holds Fit, the slider and the value, in that order', async () => {
+    it('the zoom floats over the canvas and holds Fit, the - button, the value and the + button, in that order', async () => {
         const ui = await loaded();
         await ui.click('ed-img-edit-color');
-        const ids = [...document.querySelectorAll('#ie-card .ie-statusbar [data-group="zoom"] > *')].map(e => e.id);
-        expect(ids).toEqual(['ie-zoom-fit', 'ie-zoom', 'ie-zoom-value']);
+        const ids = [...document.querySelectorAll('#ie-card .ie-canvas-area .ie-zoom-float > *')].map(e => e.id);
+        expect(ids).toEqual(['ie-zoom-fit', 'ie-zoom-out-float', 'ie-zoom-value', 'ie-zoom-in-float']);
     });
 });
 
@@ -390,6 +397,60 @@ describe('the grid (FR-021)', () => {
         expect(css).toMatch(/--grid-line:/);
         expect(rule('.ie-grid-overlay')).toMatch(/var\(--grid-line\)/);
         expect(rule('.ie-grid-overlay')).toMatch(/pointer-events:\s*none/);
+    });
+});
+
+describe('the grid precision (FR-032)', () => {
+    it('is Low, Medium, High; Medium is on at first and is the same spacing as before; the buttons are off while the grid is off', async () => {
+        const ui = await loaded();
+        await ui.click('ed-img-edit-color');
+        const ids = [...document.querySelectorAll('[data-group="grid-precision"] > *')].map(e => e.id);
+        expect(ids).toEqual(['ie-grid-low', 'ie-grid-medium', 'ie-grid-high']);
+        expect(($('ie-grid-low') as HTMLButtonElement).disabled).toBe(true);
+        expect(($('ie-grid-medium') as HTMLButtonElement).disabled).toBe(true);
+        expect($('ie-grid-medium').getAttribute('aria-pressed')).toBe('true');
+        await ui.click('ie-grid');
+        expect(($('ie-grid-low') as HTMLButtonElement).disabled).toBe(false);
+        setZoom('100');
+        await flush(2);
+        expect($('ie-grid-overlay').style.getPropertyValue('--cell')).toBe('24px');
+    });
+
+    it('Low is 4 x 4 cells and High is 16 x 16, on the colour icon and on the outline icon alike', async () => {
+        const ui = await loaded();
+        await ui.click('ed-img-edit-color');
+        await ui.click('ie-grid');
+        setZoom('100');
+        await ui.click('ie-grid-low');
+        await flush(2);
+        expect($('ie-grid-low').getAttribute('aria-pressed')).toBe('true');
+        expect($('ie-grid-medium').getAttribute('aria-pressed')).toBe('false');
+        expect($('ie-grid-overlay').style.getPropertyValue('--cell')).toBe('48px');
+        await ui.click('ie-grid-high');
+        await flush(2);
+        expect($('ie-grid-overlay').style.getPropertyValue('--cell')).toBe('12px');
+        await ui.click('ie-cancel');
+        await ui.click('ed-img-edit-outline');
+        await ui.click('ie-grid');
+        setZoom('100');
+        await ui.click('ie-grid-low');
+        await flush(2);
+        expect($('ie-grid-overlay').style.getPropertyValue('--cell')).toBe('8px');
+        await ui.click('ie-grid-high');
+        await flush(2);
+        expect($('ie-grid-overlay').style.getPropertyValue('--cell')).toBe('2px');
+    });
+
+    it('is a view only, and a new session starts back at Medium', async () => {
+        const ui = await loaded();
+        await ui.click('ed-img-edit-color');
+        await ui.click('ie-grid');
+        const before = Array.from(ui.pixels($('ie-canvas') as HTMLCanvasElement)!.data);
+        await ui.click('ie-grid-high');
+        expect(Array.from(ui.pixels($('ie-canvas') as HTMLCanvasElement)!.data)).toEqual(before);
+        await ui.click('ie-cancel');
+        await ui.click('ed-img-edit-color');
+        expect($('ie-grid-medium').getAttribute('aria-pressed')).toBe('true');
     });
 });
 
@@ -500,7 +561,7 @@ describe('no redundant control (2026-10-29)', () => {
         await ui.click('ed-img-edit-color');
         for (const id of ['ie-reset', 'ie-add-resize', 'ie-add-white', 'ie-add-black', 'ie-bg-accent']) expect(document.getElementById(id), id).toBeNull();
         expect([...document.querySelectorAll('#ie-card [data-group="background"] button')].map(b => b.id)).toEqual(['ie-bg-checker', 'ie-bg-white', 'ie-bg-black']);
-        expect([...document.querySelectorAll('#ie-card .ie-tools button')].map(b => b.id)).toEqual([
+        expect([...document.querySelectorAll('#ie-card .ie-tools .ie-tool')].map(b => b.id)).toEqual([
             'ie-preset-teams', 'ie-preset-outline',
             'ie-add-removeBg', 'ie-add-fill',
             'ie-add-trim', 'ie-add-crop', 'ie-add-square', 'ie-add-fit', 'ie-add-rotate', 'ie-add-flip-h', 'ie-add-flip-v',
@@ -516,7 +577,7 @@ describe('no redundant control (2026-10-29)', () => {
 
 describe('the toolbox by category, with icons (FR-025)', () => {
     const groups = (): Array<{ cat: string; title: string; tools: string[] }> => [...document.querySelectorAll('#ie-card .ie-group')].map(g => ({
-        cat: g.getAttribute('data-cat')!, title: g.querySelector('h4')!.textContent!, tools: [...g.querySelectorAll('.ie-tools button')].map(b => b.id),
+        cat: g.getAttribute('data-cat')!, title: g.querySelector('h4')!.textContent!, tools: [...g.querySelectorAll('.ie-tools .ie-tool')].map(b => b.id),
     }));
 
     it('has five groups, each with a title, in order', async () => {
@@ -537,7 +598,7 @@ describe('the toolbox by category, with icons (FR-025)', () => {
         for (const g of document.querySelectorAll('#ie-card .ie-group')) {
             expect(g.querySelector('h4 .icon'), g.getAttribute('data-cat')!).not.toBeNull();
             const used = new Set<string>();
-            for (const b of g.querySelectorAll('.ie-tools button')) {
+            for (const b of g.querySelectorAll('.ie-tools .ie-tool')) {
                 const ic = b.querySelector('.icon');
                 expect(ic, b.id).not.toBeNull();
                 const name = [...ic!.classList].find(c => c.startsWith('icon-'))!;

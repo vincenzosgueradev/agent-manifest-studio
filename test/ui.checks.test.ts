@@ -1,10 +1,22 @@
 // @vitest-environment jsdom
 /** FR-011, FR-016, FR-017 on the real page. */
 import { describe, expect, it } from 'vitest';
-import { boot } from './helpers/ui-harness';
+import { boot, flush } from './helpers/ui-harness';
 import { packageBytes } from './helpers/fixture';
+import { encodePng } from './helpers/png-encoder';
 
 const row = (id: string) => document.querySelector<HTMLElement>(`[data-check-id="${id}"]`)!;
+
+/** A colour icon whose glyph fills almost the whole canvas: well outside the safe area (specs/011-automatic-check-fixes). */
+const badSafeAreaColorIcon = (): Uint8Array => encodePng({
+    width: 192, height: 192, colorType: 6,
+    pixel: (x, y) => (x < 10 || x >= 182 || y < 10 || y >= 182 ? [0, 0, 0, 0] : [255, 255, 255, 255]),
+});
+
+async function clickFix(id: string): Promise<void> {
+    document.querySelector<HTMLElement>(`[data-fix="${id}"]`)!.click();
+    await flush();
+}
 
 describe('the checks region', () => {
     it('shows one row per check with verdict, found value, rule and what is not proven', async () => {
@@ -59,5 +71,74 @@ describe('the checks region', () => {
         const ui = await boot();
         await ui.open('a.zip', packageBytes());
         expect(ui.text('checks')).not.toMatch(/\p{Extended_Pictographic}/u);
+    });
+});
+
+describe('one-click fixes (specs/011-automatic-check-fixes)', () => {
+    it('"Fix it" on a safe-area warning turns the whole colour-icon group green and shows Undo', async () => {
+        const ui = await boot();
+        await ui.open('a.zip', packageBytes({ color: badSafeAreaColorIcon() }));
+        expect(row('color.safe-area').dataset.verdict).not.toBe('pass');
+        expect(document.getElementById('checks-undo')!.hidden).toBe(true);
+
+        await clickFix('color.safe-area');
+
+        for (const id of ['color.size-px', 'color.square', 'color.safe-area', 'color.format', 'color.weight']) {
+            expect(row(id).dataset.verdict, id).toBe('pass');
+        }
+        const undo = document.getElementById('checks-undo')!;
+        expect(undo.hidden).toBe(false);
+        expect(undo.textContent).toContain('colour icon');
+        expect(document.getElementById('checks-undo-btn')).not.toBeNull();
+    });
+
+    it('"Fix it" on a too-long short name cuts it to exactly 30 characters', async () => {
+        const ui = await boot();
+        await ui.open('a.zip', packageBytes({ manifest: { nameShort: 'x'.repeat(40) } }));
+        expect(row('name.short.length').dataset.verdict).toBe('fail');
+
+        await clickFix('name.short.length');
+
+        expect(row('name.short.length').dataset.verdict).toBe('pass');
+        expect(ui.$<HTMLInputElement>('ed-name.short').value).toBe('x'.repeat(30));
+    });
+
+    it('"Fix it" on a missing accent colour sets a valid one and the row turns green', async () => {
+        const ui = await boot();
+        await ui.open('a.zip', packageBytes({ manifest: { accent: null } }));
+        expect(row('accent.hex').dataset.verdict).toBe('fail');
+
+        await clickFix('accent.hex');
+
+        expect(row('accent.hex').dataset.verdict).toBe('pass');
+    });
+
+    it('"Undo" restores the checks exactly as they were before the fix', async () => {
+        const ui = await boot();
+        await ui.open('a.zip', packageBytes({ color: badSafeAreaColorIcon() }));
+        await clickFix('color.safe-area');
+        expect(row('color.safe-area').dataset.verdict).toBe('pass');
+
+        await ui.click('checks-undo-btn');
+
+        expect(row('color.safe-area').dataset.verdict).not.toBe('pass');
+        expect(document.getElementById('checks-undo')!.hidden).toBe(true);
+    });
+
+    it('"Fix everything" fixes every fixable row, leaves an unfixable one untouched, and then hides itself', async () => {
+        const ui = await boot();
+        // a fixable colour-icon problem, a fixable long name, plus an unfixable one (outline file missing)
+        await ui.open('a.zip', packageBytes({ color: badSafeAreaColorIcon(), outline: null, manifest: { nameShort: 'x'.repeat(40) } }));
+        const fixAll = document.getElementById('checks-fix-all-btn')!;
+        expect(fixAll.hidden).toBe(false);
+
+        fixAll.click();
+        await flush();
+
+        expect(row('color.safe-area').dataset.verdict).toBe('pass');
+        expect(row('name.short.length').dataset.verdict).toBe('pass');
+        expect(row('outline.present').dataset.verdict).toBe('fail');   // out of the tool's reach: untouched
+        expect(document.getElementById('checks-undo')!.hidden).toBe(false);
+        expect(document.getElementById('checks-fix-all-btn')!.hidden).toBe(true);
     });
 });

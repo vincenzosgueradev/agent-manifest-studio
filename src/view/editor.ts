@@ -14,6 +14,7 @@ import {
 } from '../services/edit/fields';
 import { originalOf, type Edits, type Original } from '../services/edit/edits';
 import { SLOT_LABEL, SLOT_SIDE } from '../services/edit/iconEdit';
+import type { SyncSuggestion } from '../services/image/sync';
 import type { Plan } from '../services/export';
 import type { IconInfo, IconSet, ManifestView } from '../types';
 
@@ -30,6 +31,8 @@ export interface EditorModel {
     iconMessage: Record<IconSlot, string | null>;
     /** The slot whose image editor is open, if any. */
     imageEditorSlot: IconSlot | null;
+    /** The sync suggestion pending on a slot's card, if any (feature 010). */
+    syncSuggestion: Record<IconSlot, SyncSuggestion | null>;
 }
 
 export interface EditorHandlers {
@@ -38,6 +41,10 @@ export interface EditorHandlers {
     onRevertAll: () => void;
     /** Opens the image editor on the icon of a slot: the one way to change an icon. */
     onIconEdit: (slot: IconSlot) => void;
+    /** Accepts the sync suggestion on a slot's card (feature 010). */
+    onSyncAccept: (slot: IconSlot) => void;
+    /** "Not now": hides the suggestion until its source changes again. */
+    onSyncDismiss: (slot: IconSlot) => void;
 }
 
 let handlers: EditorHandlers | null = null;
@@ -106,6 +113,14 @@ function iconCard(slot: IconSlot): HTMLElement {
     const edit = el('button', { id: `ed-img-edit-${slot}`, type: 'button', class: 'btn btn--primary btn--sm' }, icon('wand', 'icon--xs'), 'Edit image');
     edit.addEventListener('click', () => handlers?.onIconEdit(slot));
 
+    const syncAccept = el('button', { id: `ed-sync-accept-${slot}`, type: 'button', class: 'btn btn--primary btn--sm' });
+    syncAccept.addEventListener('click', () => handlers?.onSyncAccept(slot));
+    const syncDismiss = el('button', { id: `ed-sync-dismiss-${slot}`, type: 'button', class: 'btn btn--secondary btn--sm' }, 'Not now');
+    syncDismiss.addEventListener('click', () => handlers?.onSyncDismiss(slot));
+    const syncRow = el('div', { class: 'ed-img-sync', id: `ed-img-sync-row-${slot}`, hidden: true },
+        el('p', { class: 'ed-img-caption', id: `ed-img-sync-${slot}` }),
+        el('div', { class: 'ed-img-actions' }, syncAccept, syncDismiss));
+
     return card({ icon: 'image', title: label[0]!.toUpperCase() + label.slice(1), note: `${side} x ${side} pixels`, id: `ed-img-${slot}` },
         el('div', { class: 'ed-img-row' },
             el('figure', { class: 'ed-img-fig' },
@@ -115,6 +130,7 @@ function iconCard(slot: IconSlot): HTMLElement {
                 el('p', { class: 'ed-img-facts', id: `ed-img-facts-${slot}` }),
                 el('p', { class: 'ed-img-caption', id: `ed-img-caption-${slot}`, hidden: true }),
                 el('div', { class: 'ed-img-actions' }, edit),
+                syncRow,
                 el('p', { class: 'export-reason ed-error', id: `ed-img-msg-${slot}`, role: 'alert', hidden: true }))));
 }
 
@@ -190,6 +206,15 @@ function updateIcon(slot: IconSlot, m: EditorModel): void {
     }
     $(`ed-img-${slot}`)?.setAttribute('data-changed', String(replaced));
     setError(`ed-img-msg-${slot}`, m.iconMessage[slot]);
+    const suggestion = m.syncSuggestion[slot];
+    const syncRow = $(`ed-img-sync-row-${slot}`);
+    if (syncRow) {
+        syncRow.hidden = suggestion === null;
+        if (suggestion) {
+            $(`ed-img-sync-${slot}`)!.textContent = suggestion.text;
+            ($(`ed-sync-accept-${slot}`) as HTMLButtonElement).replaceChildren(icon('wand', 'icon--xs'), suggestion.acceptLabel);
+        }
+    }
     // the see-through parts of the colour icon show the accent colour: say so, because that is the colour behind them
     const caption = $(`ed-img-caption-${slot}`);
     if (caption && slot === 'outline') {

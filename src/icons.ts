@@ -11,7 +11,7 @@ import type { Verdict } from './types';
 export const ICON_NAMES = [
     'package', 'tag', 'bot', 'check', 'download', 'arrow-left', 'arrow-right', 'close', 'folder', 'archive',
     'user', 'globe', 'shield', 'file-text', 'file-code', 'palette', 'image', 'layers', 'key', 'lock', 'braces',
-    'info', 'help-circle', 'check-circle', 'alert-triangle', 'x-circle', 'eye', 'trash', 'copy', 'crop', 'list', 'save', 'search', 'refresh', 'undo', 'plus', 'upload', 'pipette', 'eraser', 'wand', 'sliders', 'expand', 'rotate', 'flip', 'redo', 'bucket', 'trim', 'square', 'frame', 'flip-v', 'contrast', 'shape',
+    'info', 'help-circle', 'check-circle', 'alert-triangle', 'x-circle', 'eye', 'trash', 'copy', 'crop', 'list', 'save', 'search', 'refresh', 'undo', 'plus', 'minus', 'upload', 'pipette', 'eraser', 'wand', 'sliders', 'expand', 'rotate', 'flip', 'redo', 'bucket', 'trim', 'square', 'frame', 'flip-v', 'contrast', 'shape', 'chevron-down',
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

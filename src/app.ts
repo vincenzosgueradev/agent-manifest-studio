@@ -8,7 +8,16 @@ import { copyText, hasHostFiles, pickImage, pickPackage, readFileObject, savePac
 import { readPackage } from './services/zip';
 import { exportPackage, makeContext, planEdits, suggestFileName, type EditContext, type Plan } from './services/export';
 import { EMPTY, originalOf, type Edits } from './services/edit/edits';
-import { checkNewIcon } from './services/edit/iconEdit';
+import { checkNewIcon, SLOT_SIDE } from './services/edit/iconEdit';
+import { acceptResult } from './services/image/accept';
+import {
+    baseColourFor, buildColourFromOutline, initSyncState, markDirect, otherSlot, regenerateOutline,
+    resolveSuggestion, suggestionFor, type SyncState,
+} from './services/image/sync';
+import { toHex } from './services/image/colour';
+import { windowDecoder } from './services/image/import';
+import type { Picture } from './services/image/types';
+import { planFix, planFixAll, type FixInput, type FixPlan } from './services/autofix';
 import { renderCompare, resetCompare } from './view/compare';
 import { validateManifestText, type SchemaReport } from './services/schema';
 import { renderSchema, resetSchema } from './view/schemaCard';
@@ -19,7 +28,7 @@ import { splitName, validateSuffix } from './services/suffix';
 import { initLoader, openFileInput, showLoaded, showMessage } from './view/loader';
 import { renderSummary } from './view/summary';
 import { renderPreview } from './view/preview';
-import { renderChecks } from './view/checks';
+import { renderChecks, renderUndo } from './view/checks';
 import { renderContents } from './view/contents';
 import { renderChanges } from './view/changes';
 import { initEditor, renderEditor, resetEditor } from './view/editor';
@@ -40,6 +49,10 @@ interface State {
     edits: Edits;
     /** Why the last file chosen for an icon slot was refused. */
     iconMessage: Record<IconSlot, string | null>;
+    /** Whether the colour icon and the outline icon agree with each other (feature 010). */
+    syncState: SyncState;
+    /** What the last one-click fix changed, until something else is done (specs/011-automatic-check-fixes). */
+    lastFix: { edits: Edits; summary: string } | null;
 }
 
 /** The slot whose image editor is open, if any (the editor itself holds its work). */
@@ -148,6 +161,10 @@ function render(): void {
     });
     renderEditor($('edit-groups'), {
         original: ctx.manifest, shown, edits: state.edits, originalIcons: ctx.icons, iconMessage: state.iconMessage, imageEditorSlot,
+        syncSuggestion: {
+            color: suggestionFor(state.syncState, 'color', shown.icons, m.accentColor),
+            outline: suggestionFor(state.syncState, 'outline', shown.icons, m.accentColor),
+        },
     });
     renderCompare($('look-compare'), {
         originalIcons: ctx.icons, originalAccent: ctx.manifest.accentColor,
@@ -155,6 +172,7 @@ function render(): void {
         replaced: shown.iconChanges.map(c => c.slot),
     });
     renderSchema($('schema-body'), $('schema-chip-slot'), schemaFor(shown.text));
+    renderUndo($('checks-undo'), state.lastFix);
     renderChecks($('checks-body'), $('checks-summary'), shown.checks);
     const reportStatus = $('report-status');
     reportStatus.hidden = state.reportStatus === null;
@@ -182,7 +200,7 @@ function loadBytes(name: string, bytes: Uint8Array): boolean {
     if (!made.ok) return refuse(made.message);
 
     imageEditor.close();   // the work of an editor belongs to the package it was opened on
-    state = { ctx: made.ctx, typed: null, status: null, reportStatus: null, edits: EMPTY, iconMessage: { color: null, outline: null } };
+    state = { ctx: made.ctx, typed: null, status: null, reportStatus: null, edits: EMPTY, iconMessage: { color: null, outline: null }, syncState: initSyncState(), lastFix: null };
     resetNameEditor($('name-body'));   // a new package starts from a clean editor
     resetEditor($('edit-groups'));
     showMessage(null);
@@ -270,13 +288,19 @@ async function onCopyClick(button: HTMLElement): Promise<void> {
 }
 
 document.addEventListener('click', e => {
-    const button = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-copy]');
-    if (button) void onCopyClick(button);
+    const target = e.target as HTMLElement | null;
+    const copyButton = target?.closest<HTMLElement>('[data-copy]');
+    if (copyButton) { void onCopyClick(copyButton); return; }
+    const fixButton = target?.closest<HTMLElement>('[data-fix]');
+    if (fixButton) { void onFixClick(fixButton.dataset.fix!); return; }
+    if (target?.closest('#checks-fix-all-btn')) { void onFixAllClick(); return; }
+    if (target?.closest('#checks-undo-btn')) onUndoFix();
 });
 $('copy-report-btn').addEventListener('click', () => { void onCopyReport(); });
 $('save-report-btn').addEventListener('click', () => { void onSaveReport(); });
 
 initSteps(n => {
+    if (state && step === 5 && n !== 5) state.lastFix = null;   // leaving Checks ends the fix's Undo banner
     step = n;
     render();
 });
@@ -289,25 +313,106 @@ initLoader({
     },
     onRemove: removePackage,
 });
-/** Changes the edits of the loaded package and draws again. */
+/** Changes the edits of the loaded package and draws again. Any edit, manual or automatic, ends
+ * whatever the previous fix's Undo banner was offering (research.md §6). */
 function edit(change: (e: Edits) => Edits): void {
     if (!state) return;
     state.edits = change(state.edits);
     state.status = null;
+    state.lastFix = null;
     render();
 }
 
-/** An image chosen for an icon: kept when it is usable for the slot, else the reason is shown. */
+/** An image chosen for an icon: kept when it is usable for the slot, else the reason is shown. A direct
+ * replacement (a new file, or an edit applied in the image editor) marks the slot as changed by the user,
+ * which is what may offer a sync suggestion on the other icon's card (feature 010). */
 function acceptIcon(slot: IconSlot, bytes: Uint8Array): void {
     if (!state) return;
     const r = checkNewIcon(slot, bytes);
     if (r.ok) {
         state.iconMessage = { ...state.iconMessage, [slot]: null };
+        state.syncState = markDirect(state.syncState, slot);
         edit(e => ({ ...e, icons: { ...e.icons, [slot]: bytes } }));
     } else {
         state.iconMessage = { ...state.iconMessage, [slot]: r.message };
         render();
     }
+}
+
+/** What `planFix`/`planFixAll` read: the manifest as shown now, the current bytes of an icon slot, and the
+ * window's own image decoder when it has one (specs/011-automatic-check-fixes). */
+function fixInput(s: State): FixInput {
+    return { manifest: currentView(s).shown.manifest, iconBytes, decoder: windowDecoder() };
+}
+
+/** Applies a `FixPlan` through the exact same `edit()`/`acceptIcon()` path a manual change already uses, then
+ * replaces `state.lastFix` with a fresh snapshot so "Undo" restores what came right before this fix. */
+function applyFixPlan(plan: FixPlan): void {
+    if (!state) return;
+    const before = state.edits;
+    if (Object.keys(plan.fields).length > 0) edit(e => ({ ...e, fields: { ...e.fields, ...plan.fields } }));
+    for (const [slot, bytes] of Object.entries(plan.icons) as Array<[IconSlot, Uint8Array]>) acceptIcon(slot, bytes);
+    if (!state) return;
+    state.lastFix = { edits: before, summary: plan.summary };
+    render();
+}
+
+async function onFixClick(id: string): Promise<void> {
+    if (!state) return;
+    const plan = await planFix(id, fixInput(state));
+    if (plan) applyFixPlan(plan);
+}
+
+async function onFixAllClick(): Promise<void> {
+    if (!state) return;
+    const plan = await planFixAll(currentView(state).shown.checks, fixInput(state));
+    if (plan) applyFixPlan(plan);
+}
+
+/** Restores the edits exactly as they were before the last fix ran, and forgets that fix. */
+function onUndoFix(): void {
+    if (!state?.lastFix) return;
+    const snapshot = state.lastFix.edits;
+    edit(() => snapshot);
+}
+
+/** The icon of a slot, as the new package will hold it, as a `Picture`; `null` when it is missing or not a
+ * PNG the tool can read (the checks pipeline already decoded it, so this never decodes it again). */
+function sourcePicture(slot: IconSlot): Picture | null {
+    if (!state) return null;
+    const info = currentView(state).shown.icons[slot];
+    return info.present && info.png && info.png.kind === 'ok' ? { width: info.png.header.width, height: info.png.header.height, data: info.png.rgba } : null;
+}
+
+/** Accepting the sync suggestion shown on `slot`'s card: compute it from the current content of the other
+ * icon and write only `slot` (and, for the colour icon, the accent colour) through the usual replace path. */
+function acceptSyncSuggestion(slot: IconSlot): void {
+    if (!state) return;
+    state.syncState = resolveSuggestion(state.syncState, slot);
+    const source = sourcePicture(otherSlot(slot));
+    if (!source) { render(); return; }
+    const accent = currentView(state).shown.manifest.accentColor;
+    const computed = slot === 'outline' ? regenerateOutline(source) : buildColourFromOutline(source, baseColourFor(accent));
+    const r = acceptResult(computed, SLOT_SIDE[slot]);
+    if (!r.ok) {
+        state.iconMessage = { ...state.iconMessage, [slot]: r.message };
+        render();
+        return;
+    }
+    state.iconMessage = { ...state.iconMessage, [slot]: null };
+    if (slot === 'color') {
+        const hex = toHex(baseColourFor(accent));
+        edit(e => ({ ...e, icons: { ...e.icons, color: r.bytes }, fields: { ...e.fields, accentColor: hex } }));
+    } else {
+        edit(e => ({ ...e, icons: { ...e.icons, outline: r.bytes } }));
+    }
+}
+
+/** "Not now": the suggestion goes away until its source changes again; nothing is written. */
+function dismissSyncSuggestion(slot: IconSlot): void {
+    if (!state) return;
+    state.syncState = resolveSuggestion(state.syncState, slot);
+    render();
 }
 
 /** The bytes of an icon as the new package will hold it (replaced or as loaded). */
@@ -349,9 +454,12 @@ initEditor({
         if (!state) return;
         state.typed = null;
         state.iconMessage = { color: null, outline: null };
+        state.syncState = initSyncState();
         edit(() => EMPTY);
     },
     onIconEdit: slot => imageEditor.open(slot),
+    onSyncAccept: slot => acceptSyncSuggestion(slot),
+    onSyncDismiss: slot => dismissSyncSuggestion(slot),
 });
 onSuffixInput(value => {
     if (!state) return;

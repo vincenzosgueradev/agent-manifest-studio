@@ -1,11 +1,12 @@
 /**
  * The image editor (feature 004, workspace of feature 009): a workspace over the page with the picture large on the left and the
- * tools, the steps and the colour on the right, an eyedropper, a zoom slider and the Teams-style preview. It holds its own state (the pipeline and the view settings);
+ * tools, the steps and the colour on the right, an eyedropper, a zoom control and the Teams-style preview. It holds its own state (the pipeline and the view settings);
  * the maths is in `services/image/`. What it needs from the app comes in through `deps`.
  */
 
 import { clear, el } from './dom';
 import { parseCssColor } from './preview';
+import { resetScroll } from './steps';
 import { icon, type IconName } from '../icons';
 import { cornerColour, fromHex, toHex } from '../services/image/colour';
 import { acceptResult, toTarget } from '../services/image/accept';
@@ -17,6 +18,8 @@ import type { Op, OpKind, Picture, Rgb } from '../services/image/types';
 import { cropProblem } from '../services/image/ops';
 import { rulerMarks } from './ruler';
 import { blockOf, blockText, presetBlockText } from '../services/image/rules';
+import { initEffectGuide, type GuideKey } from './effectGuide';
+import { FIELDS, type Field } from './opFields';
 import { flattenOnAccent, parseAccent } from '../services/preview';
 import { decodePng } from '../services/png';
 import type { IconSlot } from '../services/edit/fields';
@@ -73,9 +76,9 @@ type Zoom = 'fit' | number;
 const ZOOM_MIN = 10;
 const ZOOM_MAX = 200;
 const ZOOM_STEP = 10;
-/** The grid of the picture: a line every 24 pixels on the colour icon (8 x 8 cells), every 4 on the outline icon. The safe area is 120 x 120 in 192. */
-const GRID_CELL_COLOUR = 24;
-const GRID_CELL_OUTLINE = 4;
+/** The grid of the picture: a square mesh over the picture, its spacing set by `GridPrecision` (the same number of cells on both icons). The safe area is 120 x 120 in 192. */
+type GridPrecision = 'low' | 'medium' | 'high';
+const GRID_CELLS: Record<GridPrecision, number> = { low: 4, medium: 8, high: 16 };
 const COLOUR_SIDE = 192;
 const SAFE_SIDE = 120;
 const clampZoom = (z: number): number => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
@@ -91,7 +94,10 @@ interface State {
     bg: Bg;
     zoom: Zoom;
     grid: boolean;
+    gridPrecision: GridPrecision;
     status: string | null;
+    /** The index of the one step shown open (its fields visible); the others are compacted to their head. `null` closes them all. */
+    openOp: number | null;
 }
 
 /** A change that takes longer than this is reported to the user. */
@@ -108,44 +114,6 @@ export function toPixel(clientX: number, clientY: number, rect: { left: number; 
 }
 
 // ── The fields of each operation ──────────────────────────────────────────────
-
-type Field =
-    | { name: string; label: string; type: 'number'; min: number; max: number; step: number; range?: boolean; get: (o: Op) => number; set: (o: Op, v: number) => Op }
-    | { name: string; label: string; type: 'select'; options: Array<[string, string]>; get: (o: Op) => string; set: (o: Op, v: string) => Op }
-    | { name: string; label: string; type: 'colour'; optional?: boolean; get: (o: Op) => Rgb | null; set: (o: Op, v: Rgb | null) => Op }
-    | { name: string; label: string; type: 'toggle'; get: (o: Op) => boolean; set: (o: Op, v: boolean) => Op };
-
-const num = (name: string, label: string, min: number, max: number, step = 1, range = false): ((key: string) => Field) =>
-    key => ({ name, label, type: 'number', min, max, step, range, get: o => (o as unknown as Record<string, number>)[key]!, set: (o, v) => ({ ...o, [key]: v }) as Op });
-
-const FIELDS: Record<OpKind, Field[]> = {
-    removeBg: [
-        { name: 'mode', label: 'Where', type: 'select', options: [['edges', 'From the edges'], ['everywhere', 'Everywhere']], get: o => (o as { mode: string }).mode, set: (o, v) => ({ ...o, mode: v }) as Op },
-        { name: 'colour', label: 'Colour to remove', type: 'colour', optional: true, get: o => (o as { colour: Rgb | null }).colour, set: (o, v) => ({ ...o, colour: v }) as Op },
-        num('tolerance', 'Tolerance (%)', 0, 100, 1, true)('tolerance'),
-        num('softness', 'Softness (%)', 0, 100, 1, true)('softness'),
-        num('matte', 'Matte (pixels)', -5, 5)('matte'),
-    ],
-    trim: [num('tolerance', 'Background tolerance (%)', 0, 100)('tolerance')],
-    crop: [num('x', 'Left', 0, 100000)('x'), num('y', 'Top', 0, 100000)('y'), num('w', 'Width', 1, 100000)('w'), num('h', 'Height', 1, 100000)('h')],
-    square: [{ name: 'fill', label: 'Padding colour', type: 'colour', optional: true, get: o => (o as { fill: Rgb | null }).fill, set: (o, v) => ({ ...o, fill: v }) as Op }],
-    fit: [num('share', 'Share of the icon (%)', 1, 100, 0.5, true)('share')],
-    rotate: [{ name: 'quarters', label: 'Turn', type: 'select', options: [['1', '90 degrees clockwise'], ['2', '180 degrees'], ['3', '90 degrees anticlockwise']], get: o => String((o as { quarters: number }).quarters), set: (o, v) => ({ ...o, quarters: Number(v) }) as Op }],
-    flip: [{ name: 'axis', label: 'Mirror', type: 'select', options: [['h', 'Left to right'], ['v', 'Top to bottom']], get: o => (o as { axis: string }).axis, set: (o, v) => ({ ...o, axis: v }) as Op }],
-    fill: [{ name: 'colour', label: 'Colour', type: 'colour', get: o => (o as { colour: Rgb }).colour, set: (o, v) => ({ ...o, colour: v ?? (o as { colour: Rgb }).colour }) as Op }],
-    solid: [{ name: 'colour', label: 'Colour', type: 'colour', get: o => (o as { colour: Rgb }).colour, set: (o, v) => ({ ...o, colour: v ?? (o as { colour: Rgb }).colour }) as Op }],
-    tone: [
-        num('hue', 'Hue (degrees)', -180, 180, 1, true)('hue'), num('saturation', 'Saturation', -100, 100, 1, true)('saturation'),
-        num('brightness', 'Brightness', -100, 100, 1, true)('brightness'), num('contrast', 'Contrast', -100, 100, 1, true)('contrast'),
-        { name: 'invert', label: 'Invert', type: 'toggle', get: o => (o as { invert: boolean }).invert, set: (o, v) => ({ ...o, invert: v }) as Op },
-        { name: 'gray', label: 'Grayscale', type: 'toggle', get: o => (o as { gray: boolean }).gray, set: (o, v) => ({ ...o, gray: v }) as Op },
-        { name: 'threshold', label: 'Threshold (0 = off)', type: 'number', min: 0, max: 255, step: 1, range: true, get: o => (o as { threshold: number | null }).threshold ?? 0, set: (o, v) => ({ ...o, threshold: v === 0 ? null : v }) as Op },
-    ],
-    outline: [
-        { name: 'mode', label: 'From', type: 'select', options: [['alpha', 'Shape (transparency)'], ['brightness', 'Darkness (dark logo on light)']], get: o => (o as { mode: string }).mode, set: (o, v) => ({ ...o, mode: v }) as Op },
-        num('cutoff', 'Cutoff (alpha mode)', 0, 255, 1, true)('cutoff'),
-    ],
-};
 
 /** One line under a step that says what it does and what it does not, for the steps that are easy to misread. */
 const OP_HINT: Partial<Record<OpKind, string>> = {
@@ -182,17 +150,30 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
 
     window.addEventListener('resize', () => positionGuides());
 
-    // Escape closes the workspace, as Cancel does.
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && state) close(); });
+    /** The effect guides (feature 012): opened from an info control next to every toolbox entry, mounted inside the editor's own card. */
+    const guide = initEffectGuide();
+
+    // Escape closes an open guide first, then the workspace, as Cancel does.
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if (guide.isOpen()) { guide.close(); return; }
+        if (state) close();
+    });
 
     // ── state changes ─────────────────────────────────────────────────────────
 
     const evaluated = () => evaluate(state!.pipeline.source, state!.pipeline.ops);
     const result = (): Picture => evaluated().picture;
 
-    function setPipeline(pl: Pipeline): void { state!.pipeline = pl; state!.message = null; state!.status = null; render(); }
+    function setPipeline(pl: Pipeline): void {
+        state!.pipeline = pl;
+        if (state!.openOp !== null && state!.openOp >= pl.ops.length) state!.openOp = null;   // an undo or a revert can take away the open step
+        state!.message = null; state!.status = null; render();
+    }
     function addOp(op: Op): void {
-        setPipeline(add(state!.pipeline, op));
+        const pl = add(state!.pipeline, op);
+        state!.openOp = pl.ops.length - 1;   // the new step takes the focus, the others compact
+        setPipeline(pl);
     }
     const addKind = (kind: OpKind): void => addOp(defaultOp(kind, result(), state!.target));
 
@@ -210,7 +191,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         const pipeline = create(src);
         state = {
             slot, target, pipeline, name: source ? `the current ${SLOT_TITLE[slot]}` : 'nothing yet', note: source ? null : 'There is no icon in the package yet. Open an image to start.',
-            message: null, showOriginal: false, bg: 'checker', zoom: 'fit' as Zoom, grid: false, status: null,
+            message: null, showOriginal: false, bg: 'checker', zoom: 'fit' as Zoom, grid: false, gridPrecision: 'medium', status: null, openOp: null,
         };
         ticket++;
         const host = deps.root();
@@ -230,6 +211,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         ticket++;
         if (built) $('ie-card').hidden = true;
         deps.onOpenChange(null);
+        resetScroll();   // the workspace covered the page; closing it must not leave the page scrolled where it was left
     }
 
     async function openImage(file: { name: string; bytes: Uint8Array }): Promise<void> {
@@ -287,9 +269,16 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
 
         // The toolbox: the tools by category, each with an icon of the set and the colour of its category.
         toolDefs = [];
-        const tool = (id: string, key: string, label: string, ic: IconName, hint: string, run: () => void): HTMLButtonElement => {
+        /** An info control next to a tool or preset button, opening its guide (feature 012) without running the effect itself. */
+        const infoBtn = (id: string, guideKey: GuideKey, label: string): HTMLButtonElement => {
+            const b = el('button', { id: `${id}-info`, type: 'button', class: 'btn btn--secondary btn--sm ie-tool-info', 'aria-label': `About ${label}` }, icon('info', 'icon--xs'));
+            b.addEventListener('click', e => { e.stopPropagation(); guide.open(guideKey); });
+            return b;
+        };
+        const row = (id: string, main: HTMLElement, guideKey: GuideKey, label: string): HTMLElement => el('div', { class: 'ie-tool-row' }, main, infoBtn(id, guideKey, label));
+        const tool = (id: string, key: string, label: string, ic: IconName, hint: string, run: () => void, guideKey: GuideKey): HTMLElement => {
             toolDefs.push({ id, key, hint });
-            return button(id, label, ic, run, 'btn btn--secondary btn--sm ie-tool', hint);
+            return row(id, button(id, label, ic, run, 'btn btn--secondary btn--sm ie-tool', hint), guideKey, label);
         };
         const group = (cat: (typeof CATEGORIES)[number], ...buttons: HTMLElement[]): HTMLElement => el('section', { class: 'ie-group', 'data-cat': cat.id },
             el('h4', { class: 'ie-sub ie-cat' }, icon(cat.icon, 'icon--sm'), cat.title),
@@ -298,33 +287,35 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
 
         const toolbox = el('aside', { class: 'ie-toolbox', 'aria-label': 'Toolbox' },
             group(quick!,
-                button('ie-preset-teams', 'Teams-ready colour icon', 'image', () => applyPreset('teams'), 'btn btn--primary btn--sm ie-tool', PRESET_HINT.teams),
-                button('ie-preset-outline', 'Outline from this icon', 'wand', () => applyPreset('outline'), 'btn btn--primary btn--sm ie-tool', PRESET_HINT.outline)),
+                row('ie-preset-teams', button('ie-preset-teams', 'Teams-ready colour icon', 'image', () => applyPreset('teams'), 'btn btn--primary btn--sm ie-tool', PRESET_HINT.teams), 'presetTeams', 'Teams-ready colour icon'),
+                row('ie-preset-outline', button('ie-preset-outline', 'Outline from this icon', 'wand', () => applyPreset('outline'), 'btn btn--primary btn--sm ie-tool', PRESET_HINT.outline), 'presetOutline', 'Outline from this icon')),
             group(background!,
-                tool('ie-add-removeBg', 'removeBg', 'Remove background', 'eraser', 'Make the colour of the background see-through', () => addKind('removeBg')),
+                tool('ie-add-removeBg', 'removeBg', 'Remove background', 'eraser', 'Make the colour of the background see-through', () => addKind('removeBg'), 'removeBg'),
                 tool('ie-add-fill', 'fill', 'Fill background', 'bucket', 'Fill the see-through parts with the accent colour', () => {
                     const accent = parseAccent(deps.accent() ?? '');
                     addOp({ kind: 'fill', colour: accent ?? { r: 255, g: 255, b: 255 } });
-                })),
+                }, 'fill')),
             group(geometry!,
-                tool('ie-add-trim', 'trim', 'Trim', 'trim', 'Cut away the empty margin around the logo', () => addKind('trim')),
-                tool('ie-add-crop', 'crop', 'Crop', 'crop', 'Keep a part of the picture: drag on it, or type the numbers', () => addKind('crop')),
-                tool('ie-add-square', 'square', 'Make square', 'square', 'Make the picture square by padding its short side', () => addKind('square')),
-                tool('ie-add-fit', 'fit', 'Fit', 'frame', 'Scale the logo to its share of the icon, inside the safe area', () => addKind('fit')),
-                tool('ie-add-rotate', 'rotate', 'Rotate', 'rotate', 'Turn the picture by quarter turns', () => addKind('rotate')),
-                tool('ie-add-flip-h', 'flip:h', 'Flip left-right', 'flip', 'Mirror the picture from left to right', () => addOp({ kind: 'flip', axis: 'h' })),
-                tool('ie-add-flip-v', 'flip:v', 'Flip top-bottom', 'flip-v', 'Mirror the picture from top to bottom', () => addOp({ kind: 'flip', axis: 'v' }))),
+                tool('ie-add-trim', 'trim', 'Trim', 'trim', 'Cut away the empty margin around the logo', () => addKind('trim'), 'trim'),
+                tool('ie-add-crop', 'crop', 'Crop', 'crop', 'Keep a part of the picture: drag on it, or type the numbers', () => addKind('crop'), 'crop'),
+                tool('ie-add-square', 'square', 'Make square', 'square', 'Make the picture square by padding its short side', () => addKind('square'), 'square'),
+                tool('ie-add-fit', 'fit', 'Fit', 'frame', 'Scale the logo to its share of the icon, inside the safe area', () => addKind('fit'), 'fit'),
+                tool('ie-add-rotate', 'rotate', 'Rotate', 'rotate', 'Turn the picture by quarter turns', () => addKind('rotate'), 'rotate'),
+                tool('ie-add-flip-h', 'flip:h', 'Flip left-right', 'flip', 'Mirror the picture from left to right', () => addOp({ kind: 'flip', axis: 'h' }), 'flip'),
+                tool('ie-add-flip-v', 'flip:v', 'Flip top-bottom', 'flip-v', 'Mirror the picture from top to bottom', () => addOp({ kind: 'flip', axis: 'v' }), 'flip')),
             group(colour!,
-                tool('ie-add-solid', 'solid', 'Solid colour', 'palette', 'Give every visible pixel one colour', () => addKind('solid')),
-                tool('ie-add-tone', 'tone', 'Tone', 'contrast', 'Change hue, saturation, brightness and contrast', () => addKind('tone'))),
+                tool('ie-add-solid', 'solid', 'Solid colour', 'palette', 'Give every visible pixel one colour', () => addKind('solid'), 'solid'),
+                tool('ie-add-tone', 'tone', 'Tone', 'contrast', 'Change hue, saturation, brightness and contrast', () => addKind('tone'), 'tone')),
             group(outline!,
-                tool('ie-add-outline', 'outline', 'Outline maker', 'shape', 'Turn the picture into a white shape on see-through', () => addKind('outline'))));
+                tool('ie-add-outline', 'outline', 'Outline maker', 'shape', 'Turn the picture into a white shape on see-through', () => addKind('outline'), 'outline')));
 
         // The options bar: the file and the view on the left; on the right the history and the end.
         const originalBtn = el('button', { id: 'ie-original', type: 'button', class: 'btn btn--secondary btn--sm', 'aria-pressed': 'false' }, icon('eye', 'icon--xs'), 'Show original');
         originalBtn.addEventListener('click', () => { state!.showOriginal = !state!.showOriginal; render(); });
-        const gridBtn = el('button', { id: 'ie-grid', type: 'button', class: 'btn btn--secondary btn--sm', 'aria-pressed': 'false', title: 'Lines every 24 pixels (4 for the outline icon) and, on the colour icon, the 120 x 120 safe area. A view only: it is not in the result.' }, icon('list', 'icon--xs'), 'Grid');
+        const gridBtn = el('button', { id: 'ie-grid', type: 'button', class: 'btn btn--secondary btn--sm', 'aria-pressed': 'false', title: 'A square mesh over the picture, and on the colour icon the 120 x 120 safe area. A view only: it is not in the result. The precision beside it sets how many cells.' }, icon('list', 'icon--xs'), 'Grid');
         gridBtn.addEventListener('click', () => { state!.grid = !state!.grid; render(); });
+        const precisionGroup = el('div', { class: 'segmented', role: 'group', 'aria-label': 'Grid precision', 'data-group': 'grid-precision' },
+            ...(['low', 'medium', 'high'] as const).map(p => segBtn(`ie-grid-${p}`, p[0]!.toUpperCase() + p.slice(1), () => { state!.gridPrecision = p; render(); })));
 
         const head = el('div', { class: 'ie-bar-top' },
             el('div', { class: 'ie-title' }, el('h3', {}, 'Image editor'), el('span', { class: 'panel-sub', id: 'ie-title-note' })),
@@ -336,6 +327,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
             el('div', { class: 'segmented', role: 'group', 'aria-label': 'Background of the canvas', 'data-group': 'background' },
                 ...(['checker', 'white', 'black'] as const).map(bg => segBtn(`ie-bg-${bg}`, bg[0]!.toUpperCase() + bg.slice(1), () => { state!.bg = bg; render(); }))),
             gridBtn,
+            precisionGroup,
             originalBtn,
             el('span', { class: 'ie-spacer' }),
             button('ie-undo', 'Undo', 'undo', () => setPipeline(undo(state!.pipeline))),
@@ -355,19 +347,23 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         stage.addEventListener('wheel', e => {
             if (!e.ctrlKey || !state) return;
             e.preventDefault();
-            const base = typeof state.zoom === 'number' ? state.zoom : fitPercent();
-            state.zoom = clampZoom(base + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP));
-            render();
+            stepZoom(e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
         }, { passive: false });
 
-        const slider = el('input', { id: 'ie-zoom', class: 'ie-zoom-slider', type: 'range', min: String(ZOOM_MIN), max: String(ZOOM_MAX), step: String(ZOOM_STEP), value: '100', 'aria-label': 'Zoom' });
-        slider.addEventListener('input', () => { state!.zoom = clampZoom(Number(slider.value)); render(); });
+        const zoomFitBtn = el('button', { id: 'ie-zoom-fit', type: 'button', class: 'btn btn--secondary ie-zoom-float-btn ie-zoom-float-fit', 'aria-label': 'Fit', 'aria-pressed': 'false' }, 'Fit');
+        zoomFitBtn.addEventListener('click', () => { state!.zoom = 'fit'; render(); });
+        const zoomOutBtn = el('button', { id: 'ie-zoom-out-float', type: 'button', class: 'btn btn--secondary ie-zoom-float-btn', 'aria-label': 'Zoom out' }, icon('minus', 'icon--xs'));
+        zoomOutBtn.addEventListener('click', () => stepZoom(-ZOOM_STEP));
+        const zoomInBtn = el('button', { id: 'ie-zoom-in-float', type: 'button', class: 'btn btn--secondary ie-zoom-float-btn', 'aria-label': 'Zoom in' }, icon('plus', 'icon--xs'));
+        zoomInBtn.addEventListener('click', () => stepZoom(ZOOM_STEP));
+        const zoomFloat = el('div', { class: 'ie-zoom-float', role: 'group', 'aria-label': 'Zoom' },
+            zoomFitBtn, zoomOutBtn, el('span', { id: 'ie-zoom-value', class: 'ie-zoom-float-value', 'aria-live': 'polite' }, 'Fit'), zoomInBtn);
 
         const area = el('div', { class: 'ie-canvas-area' },
             el('div', { class: 'ie-ruler-corner', 'aria-hidden': 'true' }),
             el('div', { class: 'ie-ruler ie-ruler--h', id: 'ie-ruler-h', 'aria-hidden': 'true' }),
             el('div', { class: 'ie-ruler ie-ruler--v', id: 'ie-ruler-v', 'aria-hidden': 'true' }),
-            stage);
+            stage, zoomFloat);
         // The centre: the picture, and under it the result at the sizes of Teams.
         const centre = el('div', { class: 'ie-center' }, area, el('div', { class: 'ie-preview', id: 'ie-preview' }));
         // The history on the right: every effect, in the order it was put.
@@ -377,11 +373,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         const status = el('div', { class: 'ie-statusbar' },
             el('span', { id: 'ie-size', class: 'ie-status-item' }),
             el('span', { id: 'ie-pos', class: 'ie-status-item', title: 'The pixel under the pointer' }, '-'),
-            el('span', { class: 'ie-spacer' }),
-            el('div', { class: 'ie-zoom', role: 'group', 'aria-label': 'Zoom', 'data-group': 'zoom' },
-                segBtn('ie-zoom-fit', 'Fit', () => { state!.zoom = 'fit'; render(); }),
-                slider,
-                el('span', { id: 'ie-zoom-value', class: 'ie-zoom-value', 'aria-live': 'polite' }, 'Fit')));
+            el('span', { class: 'ie-spacer' }));
 
         const c = el('section', { id: 'ie-card', class: 'ie-workspace', role: 'dialog', 'aria-label': 'Image editor' },
             head,
@@ -393,6 +385,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
             el('div', { class: 'ie-main' }, toolbox, centre, panels),
             status);
         c.hidden = true;
+        guide.attach(c);
         host.append(c);
     }
 
@@ -414,6 +407,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         let pl = kind === 'outline' ? withSource(state.pipeline, src) : state.pipeline;
         for (const op of ops) pl = add(pl, op);
         if (kind === 'outline') state.name = 'the current colour icon';
+        state.openOp = pl.ops.length - 1;   // the last step of the preset takes the focus
         setPipeline(pl);
     }
 
@@ -584,7 +578,8 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         if (f.type === 'select') {
             const sel = el('select', { id, class: 'text-input', 'aria-label': f.label }, ...f.options.map(([v, label]) => el('option', { value: v }, label)));
             sel.addEventListener('change', () => onChange(f.set(state!.pipeline.ops[i]!, sel.value), true));
-            return el('div', { class: 'ie-field', 'data-name': f.name }, el('label', { for: id }, f.label), sel);
+            // Stacked, not side-by-side: a narrow panel next to a long option (e.g. "90 degrees clockwise") would truncate the native dropdown.
+            return el('div', { class: 'ie-field ie-field--select', 'data-name': f.name }, el('label', { for: id }, f.label), sel);
         }
         if (f.type === 'toggle') {
             const b = el('button', { id, type: 'button', class: 'chip-btn', 'aria-pressed': 'false' }, f.label);
@@ -612,14 +607,31 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         const list = $('ie-ops');
         clear(list);
         state!.pipeline.ops.forEach((op, i) => {
+            const isOpen = i === state!.openOp;
+            const bodyId = `ie-op-${i}-body`;
+            const toggle = el('button', {
+                type: 'button', class: 'ie-op-toggle', id: `ie-op-${i}-toggle`, 'aria-expanded': String(isOpen), 'aria-controls': bodyId,
+                'aria-label': `${isOpen ? 'Collapse' : 'Expand'} step ${i + 1}, ${OP_TITLE[op.kind]}`,
+            }, el('span', { class: 'ie-op-n' }, String(i + 1)), icon(OP_ICON[op.kind], 'icon--sm ie-op-icon'), el('strong', {}, OP_TITLE[op.kind]),
+                el('span', { class: 'ie-op-problem export-reason', id: `ie-op-${i}-problem`, hidden: true }), icon('chevron-down', 'icon--sm ie-op-chevron'));
+            toggle.addEventListener('click', () => {
+                state!.openOp = isOpen ? null : i;
+                buildOps();
+                document.getElementById(`ie-op-${i}-toggle`)?.focus();
+            });
             const rm = el('button', { id: `ie-op-${i}-remove`, type: 'button', class: 'icon-btn', 'aria-label': `Remove step ${i + 1}, ${OP_TITLE[op.kind]}`, title: 'Remove this step' }, icon('trash', 'icon--sm'));
-            rm.addEventListener('click', () => setPipeline(remove(state!.pipeline, i)));
-            list.append(el('li', { class: 'ie-op', id: `ie-op-${i}`, 'data-kind': op.kind, 'data-cat': OP_CAT[op.kind] },
-                el('div', { class: 'ie-op-head' }, el('span', { class: 'ie-op-n' }, String(i + 1)), icon(OP_ICON[op.kind], 'icon--sm ie-op-icon'), el('strong', {}, OP_TITLE[op.kind]), el('span', { class: 'ie-op-problem export-reason', id: `ie-op-${i}-problem`, hidden: true }), rm),
-                OP_HINT[op.kind] ? el('p', { class: 'ie-op-hint' }, OP_HINT[op.kind]!) : null,
-                el('div', { class: 'ie-op-fields' }, ...FIELDS[op.kind].map(f => fieldControl(i, f)))));
+            rm.addEventListener('click', () => {
+                if (state!.openOp !== null) { if (state!.openOp === i) state!.openOp = null; else if (state!.openOp > i) state!.openOp -= 1; }
+                setPipeline(remove(state!.pipeline, i));
+            });
+            list.append(el('li', { class: `ie-op${isOpen ? ' is-open' : ''}`, id: `ie-op-${i}`, 'data-kind': op.kind, 'data-cat': OP_CAT[op.kind] },
+                el('div', { class: 'ie-op-head' }, toggle, rm),
+                el('div', { class: 'ie-op-body', id: bodyId, hidden: !isOpen },
+                    OP_HINT[op.kind] ? el('p', { class: 'ie-op-hint' }, OP_HINT[op.kind]!) : null,
+                    el('div', { class: 'ie-op-fields' }, ...FIELDS[op.kind].map(f => fieldControl(i, f))))));
         });
         if (state!.pipeline.ops.length === 0) list.append(el('li', { class: 'ie-ops-empty', id: 'ie-ops-empty' }, 'No steps yet. Press a tool or a quick button.'));
+        if (state!.openOp !== null) document.getElementById(`ie-op-${state!.openOp}`)?.scrollIntoView?.({ block: 'nearest' });
     }
 
     function syncOps(problems: Array<string | null>, steps: Picture[]): void {
@@ -656,9 +668,17 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         });
     }
 
-    /** The size that `Fit` gives the picture, in percent rounded to a step of the slider and kept within it; 100 when it cannot be measured. */
+    /** The size that `Fit` gives the picture, in percent rounded to a step of ten and kept within the zoom range; 100 when it cannot be measured. */
     function fitPercent(): number {
         return clampZoom(Math.round(fitScale() * 10) * 10);
+    }
+
+    /** Changes the zoom by `delta` percent, from `Fit`'s own size when the zoom is `Fit`; used by the wheel and by the +/- buttons over the canvas. */
+    function stepZoom(delta: number): void {
+        if (!state) return;
+        const base = typeof state.zoom === 'number' ? state.zoom : fitPercent();
+        state.zoom = clampZoom(base + delta);
+        render();
     }
 
     // ── the guides: the rulers and the grid follow the picture on screen ─────
@@ -711,7 +731,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         if (!s.grid) return;
         const zoom = s.zoom === 'fit' ? null : s.zoom;
         const scaled = (n: number): number => (zoom === null ? n * box.scale : n * zoom / 100);
-        const cell = s.slot === 'color' ? GRID_CELL_COLOUR : GRID_CELL_OUTLINE;
+        const cell = s.target / GRID_CELLS[s.gridPrecision];
         overlay.style.left = `${box.viewLeft + stage.scrollLeft}px`;
         overlay.style.top = `${box.viewTop + stage.scrollTop}px`;
         overlay.style.width = `${box.width}px`;
@@ -757,6 +777,11 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         ($('ie-redo') as HTMLButtonElement).disabled = s.pipeline.redoStack.length === 0;
         $('ie-original').setAttribute('aria-pressed', String(s.showOriginal));
         $('ie-grid').setAttribute('aria-pressed', String(s.grid));
+        for (const p of ['low', 'medium', 'high'] as const) {
+            const b = $(`ie-grid-${p}`) as HTMLButtonElement;
+            b.setAttribute('aria-pressed', String(s.gridPrecision === p));
+            b.disabled = !s.grid;
+        }
         $('ie-size').textContent = `${shown.width} x ${shown.height} pixels`;
         const label = $('ie-view-label');
         label.hidden = !s.showOriginal;
@@ -778,8 +803,11 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         else { canvas.classList.remove('is-fit'); canvas.style.width = `${shown.width * s.zoom / 100}px`; canvas.style.height = `${shown.height * s.zoom / 100}px`; }
         for (const b of ['checker', 'white', 'black']) $(`ie-bg-${b}`).setAttribute('aria-pressed', String(s.bg === b));
         $('ie-zoom-fit').setAttribute('aria-pressed', String(s.zoom === 'fit'));
-        ($('ie-zoom') as HTMLInputElement).value = String(s.zoom === 'fit' ? fitPercent() : s.zoom);
-        $('ie-zoom-value').textContent = s.zoom === 'fit' ? 'Fit' : `${s.zoom}%`;
+        const zoomPct = s.zoom === 'fit' ? fitPercent() : s.zoom;
+        $('ie-zoom-value').textContent = s.zoom === 'fit' ? 'Fit' : `${zoomPct}%`;
+        $('ie-zoom-value').dataset.fitPct = String(fitPercent());   // the size Fit would use now, kept for assistive tooling even while a number is shown
+        ($('ie-zoom-out-float') as HTMLButtonElement).disabled = zoomPct <= ZOOM_MIN;
+        ($('ie-zoom-in-float') as HTMLButtonElement).disabled = zoomPct >= ZOOM_MAX;
 
         syncOps(ev.problems, ev.steps);
         renderPreview();

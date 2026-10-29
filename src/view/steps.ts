@@ -100,3 +100,9 @@ export function showStep(n: number, loaded: boolean): number {
 export function currentStep(): number {
     return current;
 }
+
+/** Scrolls the page and the current step panel back to the top: call it whenever a section or a popup that covers the page closes. */
+export function resetScroll(): void {
+    $('main-content').scrollTop = 0;
+    $(`step-${STEPS[current - 1]!.id}`).scrollTop = 0;
+}

@@ -125,7 +125,8 @@ describe('the order of the cards', () => {
 });
 
 describe('the icon cards have one action, Edit image (2026-10-29)', () => {
-    const buttons = (id: string): string[] => [...document.querySelectorAll(`#${id} button`)].map(b => b.id);
+    // excludes the sync-suggestion row (feature 010): present but hidden on every card, documented in its own contract.
+    const buttons = (id: string): string[] => [...document.querySelectorAll(`#${id} button`)].map(b => b.id).filter(bid => !bid.startsWith('ed-sync-'));
 
     it('each card has the Edit image button and no other control', async () => {
         await loaded();
