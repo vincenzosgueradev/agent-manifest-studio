@@ -7,7 +7,7 @@
 ## Summary
 
 Step 1 gets a source switch. The environment source reads the solutions and agents of the connection the
-user selected in the host (Agent Nameplate's rules, adapted, read-only), lets the user narrow them with a
+user selected in the host (read-only), lets the user narrow them with a
 search box, pick a solution and then an agent, and downloads the agent's Teams package through the host's
 Power Platform API client. The bytes go through the same loading code as an opened file. Every host call
 lives in one module; everything else is tested with fakes. The constitution was amended to 1.1.0

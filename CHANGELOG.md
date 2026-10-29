@@ -7,6 +7,8 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 ## [Unreleased]
 
 ### Fixed
+- The safe-area check says "1 pixel outside" (not "1 pixels") when exactly one pixel is outside.
+- The tool icon is redrawn: a small coloured agent between curly braces (a JSON hint), readable on both the light and the dark theme.
 - The "Short and full name differ" warning now carries an "Advice" badge and a "Why only a warning" line that says Teams accepts identical names, saving is not blocked, and there is no automatic fix.
 
 - The suggestion to regenerate the outline icon (or rebuild the colour icon) is now a clear notice with a heading, a plain sentence saying what will be replaced and that Revert restores it, and an accent bar.
@@ -48,14 +50,14 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
   nearly disappear in Microsoft 365 Copilot).
 - Change the environment suffix of the app name and save a new package.
 - Six steps (Package, Details, Look, Preview, Checks, Save) with a stepper, a breadcrumb and Back and Next,
-  in the look of Agent Nameplate; the usual environment names as chips beside the suffix.
+  with the usual environment names as chips beside the suffix.
 - The loaded package is a compact bar with Replace and Remove; Remove clears everything.
 - The checks are one compact table. New check: the logo stays inside the safe area of the colour icon.
 - The colour icon is previewed at 192, 96, 48 and 32 pixels, with a toggle that draws the safe area.
 - Contents of the new package: every file with its size and whether it changed.
 - Copy buttons for the App ID, the bot ids, the developer links and the accent colour.
 - Copy or save the checks report as JSON.
-- A set of enterprise line icons used everywhere, and the logo of Agent Nameplate.
+- A set of enterprise line icons used everywhere.
 - Cards and tables are full width, one under another, on every screen.
 - **Manifest editor**: step 2 is now Edit. Change the names, short and full description, developer name
   accent colour and version (with Bump patch and Bump minor), and replace the colour and outline icon with a PNG of the right size. Every field is

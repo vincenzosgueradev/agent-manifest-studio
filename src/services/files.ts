@@ -8,7 +8,7 @@
  * system) the screen falls back to a file input and drag-and-drop, see `readFileObject`.
  *
  * Writing: `saveFile` opens one native dialog. The platform has no silent binary write (see
- * Agent Nameplate's files.ts); one package means one dialog, which is also the user's control over
+ * the host documentation); one package means one dialog, which is also the user's control over
  * where the copy goes.
  */
 

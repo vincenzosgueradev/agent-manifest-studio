@@ -29,7 +29,7 @@ width and height; scrolling belongs to the inner panel. All colours are CSS cust
 - Long values truncate with an ellipsis and carry the full text in `title`.
 - Verdict indicators: pass, warning and fail differ by shape and by word as well as by colour.
 - Light and dark theme follow PPTB's (`data-theme` on the root, the same mechanism as Agent
-  Nameplate); text contrast at least 4.5:1 in both.
+  the tool's own look); text contrast at least 4.5:1 in both.
 - Narrow pane: regions stack, no horizontal page scroll.
 
 ## Texts that must appear verbatim

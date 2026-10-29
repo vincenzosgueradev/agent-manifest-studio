@@ -59,9 +59,9 @@ This confirms the shape of the answer (a zip), not the path the tool uses; the t
   (FR-015). Manual test 11.
 - The pasted id is checked as a GUID (`8-4-4-4-12` hexadecimal, any case), trimmed, braces removed.
 
-## 4. Browsing solutions and agents (reused from Agent Nameplate, read 2026-10-27)
+## 4. Browsing solutions and agents (read 2026-10-27)
 
-Rules kept from `../agent-nameplate/src/services/solutions.ts` and `dataverse.ts`, with their reasons:
+Rules chosen, with their reasons:
 
 1. The agents come from the `bot` table, never from `solutioncomponent`: a failure resolving solutions
    must not hide an agent.
@@ -71,7 +71,7 @@ Rules kept from `../agent-nameplate/src/services/solutions.ts` and `dataverse.ts
    display name matching "default solution") are left out; when a bot is in several solutions the real one
    wins over a container.
 4. OData follows `@odata.nextLink` to the end (Dataverse pages at 5000).
-5. Managed solutions are listed (Nameplate hides them for export; here nothing is exported).
+5. Managed solutions are listed (here nothing is exported, so they are shown).
 6. FetchXML values are escaped.
 
 Difference: this tool's code is adapted (English, its own types, no logging module, a source interface so

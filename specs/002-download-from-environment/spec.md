@@ -6,7 +6,7 @@
 
 **Status**: WITHDRAWN on 2026-10-28 (the code, the tests and the claims of this feature were removed; this folder is kept as the record)
 
-**Input**: User description: "In step 1 (Package) the user chooses the source: open a file, or download the Teams package of an agent from an environment. Download mode uses the active connection of the host and the solution and agent browsing of Agent Nameplate: a table of solutions, then the agents of the chosen solution, then Download manifest. The downloaded package is loaded exactly as if the user had opened it."
+**Input**: User description: "In step 1 (Package) the user chooses the source: open a file, or download the Teams package of an agent from an environment. Download mode uses the active connection of the host and a browsing of solutions and agents: a table of solutions, then the agents of the chosen solution, then Download manifest. The downloaded package is loaded exactly as if the user had opened it."
 
 ## Withdrawn
 
@@ -45,7 +45,7 @@ Decided in autonomous mode by choosing the recommended option; the user can over
 - Q: How does the user choose between a file and an environment? → A: A segmented switch at the top of step 1 with two options, "Open a file" and "Download from an environment". The file option is the one that is on when the tool opens, so a user without a connection loses nothing.
 - Q: What is the name of the package that was downloaded? → A: The agent's name followed by `-manifest`, with characters that file names cannot hold removed, and `.zip` (for example `Sales Helper-manifest.zip`). It is only the name shown for the loaded package and the base of the suggested name of the saved copy.
 - Q: How does the tool find the environment id that the download needs? → A: From the connection, by asking the environment for its own details. If that fails, the user is asked to paste the environment id (a GUID), and the pasted value is checked for its shape before it is used and kept only until another package is chosen.
-- Q: Which solutions are listed? → A: The same as in Agent Nameplate: every solution that holds at least one agent, system containers (Default, Active, Basic and "Default solution") left out, managed ones included (a managed solution is readable, only not editable).
+- Q: Which solutions are listed? → A: Every solution that holds at least one agent, system containers (Default, Active, Basic and "Default solution") left out, managed ones included (a managed solution is readable, only not editable).
 - Q: Is a managed solution's agent downloadable? → A: Yes. The download does not change anything.
 - Q: How fresh are the lists? → A: Each time the user enters a list the tool shows what it already has and reads again in the background, then says "Updated at hh:mm" and shows a quiet indicator while it reads; a change is shown without losing the selection or the search text.
 - Q: What if an agent belongs to no visible solution? → A: It is not lost: an extra row "Agents in no solution" lists them, as the list of agents comes from the agents table and not from the solutions.
@@ -272,7 +272,7 @@ can act on.
   hold the environment id; and the exact form in which the host hands the zip back to the tool (bytes,
   base64 text, or something else). The tool accepts every form it can recognise as a zip and refuses the
   rest, with a message.
-- The solution and agent browsing of Agent Nameplate is reused in behaviour and in rules (read-only,
+- The solution and agent browsing follows these rules (read-only,
   agents from the agents table, solutions resolved on the side, system containers hidden); its code is
   adapted to this tool and not shared.
 - The package returned for an agent is the same kind of package as the one downloaded by hand from

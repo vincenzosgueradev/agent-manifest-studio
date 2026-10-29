@@ -54,7 +54,7 @@ Prepare a package: in Copilot Studio open a development agent, download its Team
 | 17 | Make the pane narrow | no horizontal page scroll | |
 | 18 | Load a file that is not a zip, then a zip without `manifest.json` | each refused with its own message; the previous package stays | |
 | 19 | Disconnect the network and repeat 8-14 | identical result (nothing needs the network) | |
-| 21 | Open the tool next to Agent Nameplate: same look (stepper, panels, chips)? Is the logo acceptable for the marketplace policy (it is the Agent Nameplate logo, a Microsoft Copilot-style mark)? | | |
+| 21 | Open the tool in PPTB: do the stepper, panels and chips look consistent? Is the logo acceptable for the marketplace policy (it must be the tool's own mark, not a Microsoft one)? | | |
 | 22 | Press Remove on a loaded package, then load another | the first one leaves no trace; the new one starts with its own suffix | | |
 | 23 | Press the copy button on App ID, then paste it somewhere | the id is pasted; the button shows a tick for a moment | | |
 | 24 | Turn on Show safe area on the Preview step with an icon whose logo reaches the edge | a dashed square marks the central 120 x 120; the check on the Checks step is a warning | | |

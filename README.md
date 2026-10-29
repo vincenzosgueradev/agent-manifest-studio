@@ -8,9 +8,7 @@ Today the only way to know how an agent icon looks in Teams is to upload it, pub
 look. This tool replaces that loop with a file and a preview.
 
 It works on the **Teams app package** of an agent: the zip that Copilot Studio produces. You can open
-the zip you downloaded from Copilot Studio. This is what separates it from
-[Agent Nameplate](../agent-nameplate/), which renames agents inside an environment: this tool works on
-a file and never touches an environment.
+the zip you downloaded from Copilot Studio. The tool works on a file and never touches an environment.
 
 ## How to use it
 

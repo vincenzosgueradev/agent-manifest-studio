@@ -1,5 +1,5 @@
 /**
- * The step flow, in the manner of Agent Nameplate: a stepper in every step header, a breadcrumb,
+ * The step flow, a stepper in every step header, a breadcrumb,
  * Back and Next at the foot. Steps 2 to 5 open only once a package is loaded; after that any step
  * can be reached from the stepper or the breadcrumb, because the data does not depend on the order.
  */

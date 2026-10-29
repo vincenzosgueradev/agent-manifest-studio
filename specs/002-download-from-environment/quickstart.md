@@ -26,7 +26,7 @@ Needs PPTB with a connection to a development environment that has at least one 
 | 2 | Select a connection that is **not** enabled for the Power Platform API | a warning chip on the badge; Download stops with the right cause | |
 | 3 | Enable the connection for the Power Platform API, reload the tool | the badge shows the connection without the warning | |
 | 4 | Switch to the environment | the solutions with their agent counts appear; system containers are absent | |
-| 5 | Compare the list with Agent Nameplate for the same connection | same solutions, same counts | |
+| 5 | Compare the list with the solutions of the same connection in the maker portal | same solutions, same counts | |
 | 6 | Type in the search box, press Refresh | rows narrow; "Updated at" changes | |
 | 7 | Open a solution | the agents appear; the breadcrumb reads Package, Solutions, the name | |
 | 8 | Leave and re-enter the list | the rows are there at once, then refresh | |

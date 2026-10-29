@@ -1,5 +1,5 @@
 /**
- * What the package declares (FR-004, FR-005, FR-006), as cards in the manner of Agent Nameplate.
+ * What the package declares (FR-004, FR-005, FR-006), as cards.
  * The app names are not repeated here: they are shown once, with the suffix editor, and in the
  * preview.
  */

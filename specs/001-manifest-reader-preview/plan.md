@@ -11,7 +11,7 @@ preview of colour icon, outline icon and names, run a fixed list of checks, let 
 environment suffix of the two names and save a new zip in which only those two values changed.
 Everything is local: no network, no write to any environment. The technical approach is a set of
 pure modules (zip, manifest tokenizer, PNG decoder, flattening, checks, export) behind a single
-screen, with the stack and the quality gates of Agent Nameplate. The key decision is to edit the
+screen, with the stack and the quality gates of the project. The key decision is to edit the
 manifest at text level (two string literals) with a parse-and-compare safety net, so nothing else
 in the package can change.
 
@@ -20,7 +20,7 @@ in the package can change.
 **Language/Version**: TypeScript 5 (strict), ES2022, runs in the PPTB renderer (browser)
 
 **Primary Dependencies**: `fflate` 0.8.2 (exact; zip and zlib), `@pptb/types`; dev: Vite 8, Vitest 5,
-jsdom, tsx, cross-env, @types/node. No UI framework (plain DOM, like Agent Nameplate).
+jsdom, tsx, cross-env, @types/node. No UI framework (plain DOM).
 
 **Storage**: none. Nothing is kept between loads (FR-027)
 
@@ -50,7 +50,7 @@ preview and checks update within one frame while typing the suffix
 | III. Honest Preview | Notice beside the preview; every check carries `notProven`; facts dated in research.md | Pass |
 | IV. Copilot Studio and Teams First | Subject is the Teams package of a Copilot Studio agent | Pass |
 | V. Marketplace Policy | Name "Agent Manifest Studio" has no Microsoft brand as its own brand; real author; version from `package.json`; theme; README section `What this tool changes`; claims match behaviour | Pass (README to write in this feature) |
-| VI. Community Visibility | README states the gap and the difference from Agent Nameplate | Pass |
+| VI. Community Visibility | README states the gap the tool fills | Pass |
 | VII. Enterprise UI | Single screen, fills width, no emoji, no default checkboxes, empty and error states with cause | Pass |
 | VIII. Simplicity | Matches the amended first release (1.0.1) | Pass |
 | Testing Standard | Matrix, independent oracle, negative tests, mutation, no tenant data, gates | Pass (see Test strategy) |
@@ -103,7 +103,7 @@ scripts/
 └── mutation-check.mjs
 ```
 
-**Structure Decision**: single project, same layout as Agent Nameplate (services are pure and
+**Structure Decision**: single project, services and views kept apart (services are pure and
 tested directly; `view/` renders; `app.ts` only connects). `files.ts` is the only module that
 touches the PPTB API, so every other module runs unchanged in Node tests.
 

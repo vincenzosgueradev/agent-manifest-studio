@@ -18,7 +18,7 @@ environments (DEV, UAT, PROD) also means renaming it by hand, because the enviro
 in the name.
 
 This tool works on the **Teams app package** that Copilot Studio produces (a zip with a manifest and
-two icons), not on an environment. It is therefore different from Agent Nameplate, which works on
+two icons), not on an environment. It therefore works on a file, unlike a tool that works on
 the agents inside an environment. Here nothing is read from or written to any environment: the user
 brings a file and takes a file away.
 
@@ -38,10 +38,10 @@ Decided in autonomous mode by choosing the recommended option; the user can over
 
 Requirements that came from using the tool, written down so that the spec matches what is built.
 
-- The tool follows the look of Agent Nameplate: six steps (Package, Details, Look, Preview, Checks, Save; amended 2026-10-28, first built as five with Suffix in the second place) with a stepper in every header, a breadcrumb from the second step, Back and Next, panels with an icon and a title, and the usual environment names (DEV, TEST, UAT, STAGING, PREPROD, PROD) as chips beside the suffix input.
+- The tool has six steps (Package, Details, Look, Preview, Checks, Save; amended 2026-10-28, first built as five with Suffix in the second place) with a stepper in every header, a breadcrumb from the second step, Back and Next, panels with an icon and a title, and the usual environment names (DEV, TEST, UAT, STAGING, PREPROD, PROD) as chips beside the suffix input.
 - Information blocks are cards or tables, not long lists: the summary is five cards, the checks are one compact table that needs no expanding.
 - A loaded package is a compact bar (name, number of files, size, schema) with Replace and Remove; Remove returns the tool to its empty first step and leaves nothing of the package behind.
-- Every icon belongs to one set of enterprise line icons (SVG masks, because the host does not draw inline SVG); the logo is the one of Agent Nameplate. **Open point**: the logo is a Microsoft Copilot-style mark; Principle V forbids presenting a Microsoft brand as the tool's own, so it must be checked against the marketplace policy before publishing.
+- Every icon belongs to one set of enterprise line icons (SVG masks, because the host does not draw inline SVG); the logo is the tool's own mark (an agent between curly braces), not a Microsoft mark, as Principle V requires.
 - Added by the author of the tool, unasked, because they were missing: copy buttons, the contents table of the new package, the checks report, the safe-area check and guide, the colour icon at several sizes.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -359,6 +359,6 @@ exactly the suffix.
 - This feature requires an amendment to Principle VIII of the constitution (patch version 1.0.1) so
   that the first release is: read the manifest, show the preview of icon and name, change the name
   suffix, export. Glyph and accent colour editing move to the next release.
-- Difference from Agent Nameplate: that tool acts on agents inside an environment; this one acts
+- Difference from tools that act on agents inside an environment: this one acts
   only on the Teams app package and never touches an environment. The README and the marketplace
   description of this tool will say so.

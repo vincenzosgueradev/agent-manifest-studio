@@ -1,9 +1,10 @@
 <!--
 SYNC IMPACT REPORT (remove before commit)
 ==========================================
-Version change: 1.6.1 → 1.7.0 (MINOR: Principle V links the official Marketplace Policy and AI-Assisted
+Version change: 1.7.0 → 1.7.1 (PATCH: the tool is independent; references to another tool are removed).
+Earlier: 1.6.1 → 1.7.0 (MINOR: Principle V links the official Marketplace Policy and AI-Assisted
 Development Policy pages and requires both to be checked line by line before every submission, and gains
-the rules learned from Agent Nameplate's second review round: icon must not be a company/product logo,
+the rules learned from an earlier marketplace review: icon must not be a company/product logo,
 README must match only what is actually published, AI-assistance disclosure is required when due,
 connections declared in package.json must match real usage with minAPI set, and user-facing text stays
 in English.)
@@ -30,9 +31,8 @@ environment).
 Earlier: 1.0.0 → 1.0.1 (PATCH: Principle VIII wording; first release is now manifest
 reader + preview + name suffix + export; glyph/colour editing moves to the next release)
 Earlier: none → 1.0.0 (initial ratification)
-Derived from: the constitution of Agent Nameplate (testing standard, release changelog, UI and
-navigation standards) plus the lessons of its marketplace review (naming, author, theme,
-confirmation of writes, README "What this tool changes").
+Derived from: a testing standard, a release changelog, UI and navigation standards, plus the lessons
+of a marketplace review (naming, author, theme, confirmation of writes, README "What this tool changes").
 Added sections: all.
 Removed sections: none.
 TODOs deferred: verify the marketplace name is free; settle the 72 KB / 100 KB conflict by test.
@@ -43,8 +43,8 @@ TODOs deferred: verify the marketplace name is free; settle the 72 KB / 100 KB c
 
 Agent Manifest Studio is a Power Platform ToolBox tool to **preview and prepare the icon of a
 Copilot Studio agent before it is uploaded**, without publishing the agent and without writing to
-any environment. It is a separate tool from Agent Nameplate: its own folder, specs, changelog,
-releases and constitution.
+any environment. It is an independent tool: its own folder, specs, changelog, releases and
+constitution.
 
 ## Core Principles
 
@@ -112,8 +112,7 @@ have changed:
 - AI-Assisted Development Policy: <https://docs.powerplatformtoolbox.com/policies/ai-assisted-development>
 
 Both MUST be checked line by line before `/custom-ampush` or `/custom-publish` is proposed
-(Tool Validation Gate), not only the points already caught below. Concretely, from past reviews of
-this tool and of its sibling Agent Nameplate:
+(Tool Validation Gate), not only the points already caught below. Concretely, from past reviews:
 
 - **Name:** no Microsoft trademark or product name (Copilot, Teams, Microsoft…) in the display
   name, package name or description as if it were the tool's own brand. Referring to them to
@@ -149,8 +148,7 @@ this tool and of its sibling Agent Nameplate:
   not a style choice.
 - **Claims match behaviour.** No text promises more than the tool does.
 
-**Rationale:** these are exactly the five points on which Agent Nameplate was sent back for
-changes.
+**Rationale:** these are exactly the points on which a tool was sent back for changes.
 
 ### VI. Community Visibility
 
@@ -400,4 +398,4 @@ reviewed against all eight Core Principles before the build starts; a feature th
 Principle II (local and read-only) or Principle V (marketplace policy) MUST NOT proceed without
 an amendment.
 
-**Version**: 1.7.0 | **Ratified**: 2026-10-26 | **Last Amended**: 2026-10-29
+**Version**: 1.7.1 | **Ratified**: 2026-10-26 | **Last Amended**: 2026-10-29

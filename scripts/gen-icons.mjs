@@ -4,7 +4,7 @@
  *   node scripts/gen-icons.mjs
  *
  * Style: 16 x 16 grid, 1.5 stroke, round caps and joins, one colour (the shape is a CSS mask, the
- * colour is `currentColor`), as in Agent Nameplate. The host does not draw inline SVG, so an icon
+ * colour is `currentColor`). The host does not draw inline SVG, so an icon
  * is `<span class="icon icon-NAME">` and its shape comes from `mask-image` (see src/icons.ts).
  *
  * To add an icon: add its inner markup here, add its name to `ICON_NAMES` in src/icons.ts and run

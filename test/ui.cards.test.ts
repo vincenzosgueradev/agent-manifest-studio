@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * The information blocks are cards in the manner of Agent Nameplate (head with icon and title, rows
+ * The information blocks are cards (head with icon and title, rows
  * with a label and a value), and every icon belongs to the tool's own set (asked by hand,
  * 2026-10-27).
  */

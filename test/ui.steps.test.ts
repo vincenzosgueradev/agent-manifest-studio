@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * The step flow in the manner of Agent Nameplate: stepper, breadcrumb, Back and Next, suffix chips
+ * The step flow: stepper, breadcrumb, Back and Next, suffix chips
  * (asked by hand, 2026-10-27).
  */
 import { describe, expect, it } from 'vitest';

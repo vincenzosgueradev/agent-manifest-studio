@@ -64,9 +64,9 @@ Documentation conflict: 72 KB (Copilot Studio "Create and delete agents") agains
 agent details"). Decision unchanged: **warning above 72 KB, failure above 100 KB**. The `KB` is
 1024 bytes. A manual test settles it later; the thresholds live in `limits.ts`.
 
-## 5. Tooling decisions (reuse of Agent Nameplate)
+## 5. Tooling decisions
 
-Read from `../agent-nameplate/` on 2026-10-26: TypeScript strict, Vite 8 with IIFE output and fixed
+Chosen on 2026-10-26: TypeScript strict, Vite 8 with IIFE output and fixed
 file names (`dist/assets/index.js`), `base: "./"`, `root: "./src"`, version injected as
 `__APP_VERSION__` from `package.json`; Vitest 5 with `test/**/*.test.ts` and a setup file; jsdom
 for UI tests; `fflate` 0.8.2 pinned for zip; a mutation script that breaks the code one defect at a
@@ -74,15 +74,15 @@ time and restores the files from memory.
 
 | Topic | Decision | Alternatives rejected |
 |-------|----------|-----------------------|
-| Zip | `fflate` 0.8.2, exact version, same as Agent Nameplate (already reviewed there) | JSZip (larger, async, no gain); own inflate (risk without benefit) |
+| Zip | `fflate` 0.8.2, exact version | JSZip (larger, async, no gain); own inflate (risk without benefit) |
 | PNG | Own decoder for IHDR, PLTE, tRNS, IDAT with `fflate`'s `unzlibSync` only for the zlib stream; own unfilter (types 0-4) | `pngjs` (Node-oriented, adds a dependency to review); browser `createImageBitmap` (async, colour-managed, not deterministic, cannot report bit depth/colour type) |
 | Manifest edit | **Text-level replacement** of the two string values found by a small JSON tokenizer; everything else (spacing, order, BOM, unknown keys) stays byte-for-byte | `JSON.parse` then `JSON.stringify` (reformats the file, loses number forms, risks changing entries); regex (breaks on escaped quotes and nested `name` keys) |
 | Safety net on the edit | After the replacement, the new text is parsed and compared with the old parse: the only differences allowed are the two values. A mismatch aborts the export | trust the tokenizer alone |
 | Flattening formula | `out = floor((src*a + bg*(255-a) + 127) / 255)` per channel, integer maths, `a` in 0-255 | float maths (differs between runs and platforms) |
-| Zip output | `zipSync`, entries recreated (never cloned: see Agent Nameplate `rezip.ts`), same names and order, **fixed entry date 1980-01-01** so the same input gives the same bytes | default `Date.now()` mtime (two exports differ) |
+| Zip output | `zipSync`, entries recreated (never cloned), same names and order, **fixed entry date 1980-01-01** so the same input gives the same bytes | default `Date.now()` mtime (two exports differ) |
 | Entry limits | Whole file max 5 MB, entry max 1 MB uncompressed, at most 200 entries; sizes read from the zip directory *before* any inflate, using the `filter` callback of `unzipSync` | inflate first and measure (zip bomb) |
 | Path safety | Reject `..` segments, leading `/`, backslashes, drive letters, empty names and duplicates; directory entries (trailing `/`) are kept | silent fix-up of paths |
-| File access | Open: `toolboxAPI.fileSystem.selectPath` + `readBinary`, with `<input type=file>` and drag-and-drop as the fallback when the API is absent. Save: `fileSystem.saveFile` (one dialog; the platform has no silent binary write: see Agent Nameplate `files.ts`) | terminal tricks (blocked by the platform) |
+| File access | Open: `toolboxAPI.fileSystem.selectPath` + `readBinary`, with `<input type=file>` and drag-and-drop as the fallback when the API is absent. Save: `fileSystem.saveFile` (one dialog; the platform has no silent binary write) | terminal tricks (blocked by the platform) |
 | Network | None. No `connections` feature in `package.json`; a test fails if `fetch`, `XMLHttpRequest` or `WebSocket` is called | |
 | Headless / MCP | Not in this release (constitution Principle VI, VIII) | |
 
@@ -90,7 +90,7 @@ time and restores the files from memory.
 
 - That a Copilot Studio package always has `name.short` and `name.full` carrying the same bracket
   suffix. Spec assumption; if names differ, both are shown and the same suffix is applied.
-- That `saveFile` accepts a `Uint8Array`. Agent Nameplate passes one; quickstart step 9 records the
+- That `saveFile` accepts a `Uint8Array`. Other tools pass one; quickstart step 9 records the
   result of the manual test.
 - That Teams accepts the exported package as a custom app. Known to work for a renamed manifest
   with a different suffix only through the manual test (quickstart step 10).

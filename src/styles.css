@@ -1,6 +1,6 @@
 /* ============================================================
    Agent Manifest Studio - styles
-   Same visual language as Agent Nameplate (header, step panels, stepper, breadcrumb, panels with
+   One visual language (header, step panels, stepper, breadcrumb, panels with
    icon and title, chips, tables). Colours come from custom properties; the only inline colour is
    the accent colour of the loaded package, which is data, not theme.
    ============================================================ */
