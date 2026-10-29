@@ -57,6 +57,33 @@ export function evaluate(source: Picture, ops: Op[]): Evaluated {
     return { picture: current, problems, steps };
 }
 
+/**
+ * The largest value a slider of a crop rectangle may take on the picture that reaches the crop, so that
+ * `x + w` and `y + h` never leave it: Left and Top stop where the rectangle would, Width and Height where
+ * the picture ends. At least the smallest value the field accepts.
+ */
+export function cropSliderMax(op: Extract<Op, { kind: 'crop' }>, field: string, input: Picture): number {
+    switch (field) {
+        case 'x': return Math.max(0, input.width - op.w);
+        case 'y': return Math.max(0, input.height - op.h);
+        case 'w': return Math.max(1, input.width - op.x);
+        default: return Math.max(1, input.height - op.y);
+    }
+}
+
+/**
+ * The first picture in the steps that has to be enlarged, which blurs it, or `null`: the one that reaches a Fit
+ * step smaller than the area Fit fills, or the final one when it is smaller than the icon.
+ */
+export function pictureToEnlarge(steps: Picture[], ops: Op[], target: number): Picture | null {
+    for (let i = 0; i < ops.length; i++) {
+        const op = ops[i]!;
+        if (op.kind === 'fit' && Math.max(steps[i]!.width, steps[i]!.height) < op.target * op.share / 100) return steps[i]!;
+    }
+    const last = steps[steps.length - 1]!;
+    return last.width < target || last.height < target ? last : null;
+}
+
 // ── History ───────────────────────────────────────────────────────────────────
 
 export interface Pipeline {

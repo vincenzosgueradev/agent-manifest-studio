@@ -7,6 +7,7 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 ## [Unreleased]
 
 ### Fixed
+- Image editor: the crop box drawn by dragging now lines up with the picture (it was 1 pixel off because of the border of the stage); the crop sliders stop where the rectangle would leave the picture; the "may look blurred" warning also appears when a crop or a step makes the picture smaller than the area it has to fill, and is shown next to any other note.
 - The safe-area check says "1 pixel outside" (not "1 pixels") when exactly one pixel is outside.
 - The tool icon is redrawn: a small coloured agent between curly braces (a JSON hint), readable on both the light and the dark theme.
 - The "Short and full name differ" warning now carries an "Advice" badge and a "Why only a warning" line that says Teams accepts identical names, saving is not blocked, and there is no automatic fix.

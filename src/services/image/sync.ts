@@ -44,9 +44,7 @@ export function suggestionPending(state: SyncState, slot: IconSlot): boolean {
 export interface SyncSuggestion {
     /** The card the suggestion is drawn on. */
     slot: IconSlot;
-    /** What it will replace (FR-009). */
-    text: string;
-    /** A short heading and the plain consequence, shown in the notice above the buttons. */
+    /** A short heading and the plain consequence (what it will replace, FR-009), shown in the notice above the buttons. */
     title: string;
     detail: string;
     acceptLabel: string;
@@ -58,12 +56,12 @@ export function suggestionFor(state: SyncState, slot: IconSlot, icons: IconSet, 
     const source = icons[otherSlot(slot)];
     if (!source.present || !source.png || source.png.kind !== 'ok') return null;
     if (slot === 'outline') {
-        return { slot, text: 'The colour icon changed. Regenerate the outline icon to match its shape?',
+        return { slot,
             title: 'Outline icon is out of date',
             detail: 'You changed the colour icon, so the outline icon no longer matches it. Regenerate draws a new 32 x 32 white outline from the shape of the colour icon and replaces the current one. Revert restores the original.', acceptLabel: 'Regenerate' };
     }
     const hex = toHex(baseColourFor(accentHex));
-    return { slot, text: `The outline icon changed. Build a colour icon from its shape, on ${hex}?`,
+    return { slot,
         title: 'Colour icon is out of date',
         detail: `You changed the outline icon, so the colour icon no longer matches it. This builds a new 192 x 192 colour icon from the outline's shape on ${hex} and replaces the current one. Revert restores the original.`, acceptLabel: 'Build colour icon' };
 }

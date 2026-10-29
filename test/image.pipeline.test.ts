@@ -1,6 +1,6 @@
 /** Feature 004: the list of operations, history, presets, PNG writing, import and what Apply refuses. */
 import { describe, expect, it } from 'vitest';
-import { add, applyOp, checkpoint, create, reset, defaultOp, evaluate, hasFlatBorder, opProblem, presetOutline, presetTeamsColour, redo, remove, SAFE_AREA_SHARE, undo, update, withSource } from '../src/services/image/pipeline';
+import { add, applyOp, cropSliderMax, pictureToEnlarge, checkpoint, create, reset, defaultOp, evaluate, hasFlatBorder, opProblem, presetOutline, presetTeamsColour, redo, remove, SAFE_AREA_SHARE, undo, update, withSource } from '../src/services/image/pipeline';
 import { acceptResult, toTarget } from '../src/services/image/accept';
 import { encodePng } from '../src/services/image/pngWrite';
 import { fromPng, importImage, reduceTo, sniff, type HostDecoder } from '../src/services/image/import';
@@ -369,5 +369,52 @@ describe('speed (SC-006)', () => {
         const took = performance.now() - started;
         expect([out.width, out.height]).toEqual([192, 192]);
         expect(took).toBeLessThan(1000);
+    });
+});
+
+describe('cropSliderMax: a crop never leaves the picture that reaches it', () => {
+    const input = pic(O.make(500, 300, () => [0, 0, 0, 255]));
+    const crop = (x: number, y: number, w: number, h: number): Extract<Op, { kind: 'crop' }> => ({ kind: 'crop', x, y, w, h });
+    it.each([
+        ['x stops where the width would leave the picture', crop(0, 0, 100, 50), 'x', 400],
+        ['y stops where the height would leave the picture', crop(0, 0, 100, 50), 'y', 250],
+        ['w ends at the picture from x', crop(120, 0, 100, 50), 'w', 380],
+        ['h ends at the picture from y', crop(0, 70, 100, 50), 'h', 230],
+        ['x is at least 0 when the width is the whole picture and more', crop(0, 0, 600, 50), 'x', 0],
+        ['w is at least 1 when x is on the last column', crop(500, 0, 1, 50), 'w', 1],
+        ['h is at least 1 when y is on the last row', crop(0, 300, 1, 1), 'h', 1],
+    ])('%s', (_n, op, field, expected) => {
+        expect(cropSliderMax(op, field, input)).toBe(expected);
+    });
+});
+
+describe('pictureToEnlarge: says which picture is blurred by being enlarged', () => {
+    const solid = (w: number, h: number): Picture => pic(O.make(w, h, () => [0, 0, 0, 255]));
+    const fit = (share: number): Op => ({ kind: 'fit', target: 192, share });
+    it('is null for an icon at its size with no steps', () => expect(pictureToEnlarge([solid(192, 192)], [], 192)).toBeNull());
+    it('names the source when it is smaller than the icon and nothing enlarges it', () => {
+        const p = solid(100, 100);
+        expect(pictureToEnlarge([p], [], 192)).toBe(p);
+    });
+    it('is null for a picture larger than the area that Fit fills (it only shrinks)', () => {
+        const a = solid(130, 130), b = solid(192, 192);
+        expect(pictureToEnlarge([a, b], [fit(62.5)], 192)).toBeNull();
+    });
+    it('names the picture that reaches Fit when that is smaller than the area Fit fills', () => {
+        const a = solid(100, 100), b = solid(192, 192);
+        expect(pictureToEnlarge([a, b], [fit(62.5)], 192)).toBe(a);
+    });
+    it('sees a crop that makes a large source small, which the source alone would hide', () => {
+        const source = solid(500, 500), cropped = solid(40, 40), fitted = solid(192, 192);
+        expect(pictureToEnlarge([source, cropped, fitted], [{ kind: 'crop', x: 0, y: 0, w: 40, h: 40 }, fit(62.5)], 192)).toBe(cropped);
+    });
+    it('names the final picture when it is smaller than the icon after the last step', () => {
+        const source = solid(500, 500), cropped = solid(40, 40);
+        expect(pictureToEnlarge([source, cropped], [{ kind: 'crop', x: 0, y: 0, w: 40, h: 40 }], 192)).toBe(cropped);
+    });
+    it('uses the target of the slot: 32 for the outline icon', () => {
+        const p = solid(32, 32);
+        expect(pictureToEnlarge([p], [], 32)).toBeNull();
+        expect(pictureToEnlarge([solid(31, 32)], [], 32)).not.toBeNull();
     });
 });

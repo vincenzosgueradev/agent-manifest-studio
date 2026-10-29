@@ -71,7 +71,7 @@ describe('suggestionFor', () => {
         const s = markDirect(initSyncState(), 'color');
         const is = icons(info(true, okPng(192, 192)), info(true, okPng(32, 32)));
         const sug = suggestionFor(s, 'outline', is, '#07687d');
-        expect(sug).toMatchObject({ slot: 'outline', text: 'The colour icon changed. Regenerate the outline icon to match its shape?', title: 'Outline icon is out of date', acceptLabel: 'Regenerate' });
+        expect(sug).toMatchObject({ slot: 'outline', title: 'Outline icon is out of date', acceptLabel: 'Regenerate' });
         expect(sug!.detail).toContain('32 x 32');
     });
 
@@ -79,7 +79,7 @@ describe('suggestionFor', () => {
         const s = markDirect(initSyncState(), 'outline');
         const is = icons(info(true, okPng(192, 192)), info(true, okPng(32, 32)));
         const sug = suggestionFor(s, 'color', is, '#07687d');
-        expect(sug).toMatchObject({ slot: 'color', text: 'The outline icon changed. Build a colour icon from its shape, on #07687d?', title: 'Colour icon is out of date', acceptLabel: 'Build colour icon' });
+        expect(sug).toMatchObject({ slot: 'color', title: 'Colour icon is out of date', acceptLabel: 'Build colour icon' });
         expect(sug!.detail).toContain('#07687d');
     });
 

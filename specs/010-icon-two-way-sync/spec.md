@@ -178,7 +178,7 @@ a sync suggestion until the user replaces one of the two icons.
 - **FR-008**: When the computed result (the outline shape, or its enlarged, recoloured version) would be fully
   transparent, the tool MUST refuse it with the same message already used whenever a computed icon is empty, and
   MUST NOT change the target icon.
-- **FR-009**: Each suggestion MUST state, in one short line, which icon (and, for the colour suggestion, the
+- **FR-009**: Each suggestion MUST state, in a short heading and one sentence, which icon (and, for the colour suggestion, the
   accent colour) it will replace, before the user accepts it.
 
 ### Key Entities *(include if feature involves data)*

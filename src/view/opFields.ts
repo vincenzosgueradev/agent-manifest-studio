@@ -13,7 +13,7 @@ export type Field =
     | { name: string; label: string; type: 'colour'; optional?: boolean; get: (o: Op) => Rgb | null; set: (o: Op, v: Rgb | null) => Op }
     | { name: string; label: string; type: 'toggle'; get: (o: Op) => boolean; set: (o: Op, v: boolean) => Op };
 
-export const num = (name: string, label: string, min: number, max: number, step = 1, range = true): ((key: string) => Field) =>
+export const num = (name: string, label: string, min: number, max: number, step = 1, range = false): ((key: string) => Field) =>
     key => ({ name, label, type: 'number', min, max, step, range, get: o => (o as unknown as Record<string, number>)[key]!, set: (o, v) => ({ ...o, [key]: v }) as Op });
 
 export const FIELDS: Record<OpKind, Field[]> = {
@@ -22,10 +22,10 @@ export const FIELDS: Record<OpKind, Field[]> = {
         { name: 'colour', label: 'Colour to remove', type: 'colour', optional: true, get: o => (o as { colour: Rgb | null }).colour, set: (o, v) => ({ ...o, colour: v }) as Op },
         num('tolerance', 'Tolerance (%)', 0, 100, 1, true)('tolerance'),
         num('softness', 'Softness (%)', 0, 100, 1, true)('softness'),
-        num('matte', 'Matte (pixels)', -5, 5)('matte'),
+        num('matte', 'Matte (pixels)', -5, 5, 1, true)('matte'),
     ],
-    trim: [num('tolerance', 'Background tolerance (%)', 0, 100)('tolerance')],
-    crop: [num('x', 'Left', 0, 100000)('x'), num('y', 'Top', 0, 100000)('y'), num('w', 'Width', 1, 100000)('w'), num('h', 'Height', 1, 100000)('h')],
+    trim: [num('tolerance', 'Background tolerance (%)', 0, 100, 1, true)('tolerance')],
+    crop: [num('x', 'Left', 0, 100000, 1, true)('x'), num('y', 'Top', 0, 100000, 1, true)('y'), num('w', 'Width', 1, 100000, 1, true)('w'), num('h', 'Height', 1, 100000, 1, true)('h')],
     square: [{ name: 'fill', label: 'Padding colour', type: 'colour', optional: true, get: o => (o as { fill: Rgb | null }).fill, set: (o, v) => ({ ...o, fill: v }) as Op }],
     fit: [num('share', 'Share of the icon (%)', 1, 100, 0.5, true)('share')],
     rotate: [{ name: 'quarters', label: 'Turn', type: 'select', options: [['1', '90 degrees clockwise'], ['2', '180 degrees'], ['3', '90 degrees anticlockwise']], get: o => String((o as { quarters: number }).quarters), set: (o, v) => ({ ...o, quarters: Number(v) }) as Op }],

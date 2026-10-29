@@ -185,6 +185,30 @@ describe('the steps', () => {
     });
 });
 
+describe('crop sliders and the enlarge warning', () => {
+    it('a crop slider stops where the rectangle would leave the picture, and Width and Height follow Left and Top', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        await ui.click('ie-add-crop');
+        const n = document.querySelectorAll('#ie-ops > li').length - 1;
+        const max = (f: string): string => (document.getElementById(`ie-op-${n}-${f}-range`) as HTMLInputElement).max;
+        expect([max('x'), max('y'), max('w'), max('h')]).toEqual(['0', '0', '192', '192']);   // the rectangle is the whole picture: nothing can move yet
+        await ui.type(`ie-op-${n}-w`, '100');
+        expect(max('x')).toBe('92');
+    });
+
+    it('a crop that makes a large picture small gets the enlarge warning', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        await ui.click('ie-add-crop');
+        const n = document.querySelectorAll('#ie-ops > li').length - 1;
+        await ui.type(`ie-op-${n}-w`, '40');
+        await ui.type(`ie-op-${n}-h`, '40');
+        expect($('ie-note').hidden).toBe(false);
+        expect($('ie-note').textContent).toContain('40 x 40 pixels has to be enlarged');
+    });
+});
+
 describe('every number of every step has a number box and a slider', () => {
     it('matte, trim tolerance and the crop box get a slider that follows the number', async () => {
         const ui = await loaded();
@@ -323,6 +347,24 @@ describe('history and comparison', () => {
         canvas.dispatchEvent(new MouseEvent('pointerup', { clientX: 90, clientY: 90, bubbles: true }));
         await flush();
         expect(kinds()).toEqual([]);
+    });
+
+    it('the crop box is placed from the padding edge of the stage, like the rulers and the grid (the stage has a border)', async () => {
+        const ui = await loaded();
+        await editColour(ui);
+        const canvas = $('ie-canvas');
+        const rectOf = (left: number, top: number, w: number, h: number) => ({ left, top, width: w, height: h, right: left + w, bottom: top + h, x: left, y: top, toJSON: () => ({}) });
+        canvas.getBoundingClientRect = () => rectOf(111, 221, 192, 192);
+        $('ie-stage').getBoundingClientRect = () => rectOf(110, 220, 600, 400);
+        Object.defineProperty($('ie-stage'), 'clientLeft', { value: 1, configurable: true });
+        Object.defineProperty($('ie-stage'), 'clientTop', { value: 1, configurable: true });
+        canvas.dispatchEvent(new MouseEvent('pointerdown', { clientX: 111, clientY: 221, bubbles: true }));
+        canvas.dispatchEvent(new MouseEvent('pointermove', { clientX: 111 + 19, clientY: 221 + 19, bubbles: true }));
+        const box = $('ie-crop-box');
+        expect(box.hidden).toBe(false);
+        expect(box.style.left).toBe('0px');          // 111 - 110 - 1 border + 0 pixels in
+        expect(box.style.top).toBe('0px');
+        expect(box.style.width).toBe('20px');
     });
 
     it('the background and zoom switches are views only: the result does not change', async () => {

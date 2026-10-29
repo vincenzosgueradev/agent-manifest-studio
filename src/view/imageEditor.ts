@@ -13,7 +13,7 @@ import { acceptResult, toTarget } from '../services/image/accept';
 import { importImage, windowDecoder } from '../services/image/import';
 import { encodePng } from '../services/image/pngWrite';
 import { resizePicture } from '../services/image/resample';
-import { add, checkpoint, create, defaultOp, evaluate, presetOutline, presetTeamsColour, redo, remove, reset, undo, update, withSource, type Pipeline } from '../services/image/pipeline';
+import { add, checkpoint, create, cropSliderMax, defaultOp, evaluate, pictureToEnlarge, presetOutline, presetTeamsColour, redo, remove, reset, undo, update, withSource, type Pipeline } from '../services/image/pipeline';
 import type { Op, OpKind, Picture, Rgb } from '../services/image/types';
 import { cropProblem } from '../services/image/ops';
 import { rulerMarks } from './ruler';
@@ -452,7 +452,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
             const w = Math.abs(drag.x1 - drag.x0) + 1, h = Math.abs(drag.y1 - drag.y0) + 1;
             const sx = rect.width / p.width, sy = rect.height / p.height;
             const stageRect = stage.getBoundingClientRect();
-            Object.assign(box().style, { left: `${rect.left - stageRect.left + x * sx}px`, top: `${rect.top - stageRect.top + y * sy}px`, width: `${w * sx}px`, height: `${h * sy}px` });
+            Object.assign(box().style, { left: `${rect.left - stageRect.left - stage.clientLeft + x * sx}px`, top: `${rect.top - stageRect.top - stage.clientTop + y * sy}px`, width: `${w * sx}px`, height: `${h * sy}px` });
             box().hidden = false;
             box().title = `${w} x ${h} pixels`;
         };
@@ -646,7 +646,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
                     const v = f.get(op);
                     if (!focused) (input as HTMLInputElement).value = String(v);
                     const r = document.getElementById(`ie-op-${i}-${f.name}-range`) as HTMLInputElement | null;
-                    if (r && op.kind === 'crop') r.max = String(f.name === 'x' || f.name === 'w' ? state!.pipeline.source.width : state!.pipeline.source.height);   // a slider to 100000 would be useless: a crop lies inside the picture
+                    if (r && op.kind === 'crop') r.max = String(cropSliderMax(op, f.name, steps[i]!));   // a slider to 100000 would be useless: a crop lies inside the picture it receives
                     if (r && document.activeElement !== r) r.value = String(v);
                 } else if (f.type === 'select') (input as HTMLSelectElement).value = f.get(op);
                 else if (f.type === 'toggle') input.setAttribute('aria-pressed', String(f.get(op)));
@@ -766,10 +766,10 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
 
         $('ie-title-note').textContent = `${SLOT_TITLE[s.slot]}, ${s.target} x ${s.target} pixels, from ${s.name}`;
         const note = $('ie-note');
-        const src = s.pipeline.source;
-        // a picture smaller than the icon has to be enlarged, which blurs it: say so, whichever way it got here
-        const small = src.width < s.target || src.height < s.target ? `This picture is ${src.width} x ${src.height} pixels, smaller than the ${s.target} x ${s.target} icon, so it is enlarged and may look blurred. A larger picture gives a sharper icon.` : null;
-        const noteText = s.note ?? small;
+        // a picture that has to be enlarged to fill the icon is blurred by it: say so, whichever way it got here, next to any other note
+        const tiny = pictureToEnlarge(ev.steps, s.pipeline.ops, s.target);
+        const small = tiny ? `A picture of ${tiny.width} x ${tiny.height} pixels has to be enlarged to fill the ${s.target} x ${s.target} icon, so it may look blurred. A larger picture gives a sharper icon.` : null;
+        const noteText = [s.note, small].filter(t => t !== null).join(' ') || null;
         note.hidden = noteText === null;
         note.textContent = noteText ?? '';
         const message = $('ie-message');
