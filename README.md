@@ -79,6 +79,11 @@ a file and never touches an environment.
 - Choosing a glyph from a library, comparing several agents and an MCP entry point are planned for
   later releases.
 
+## AI Assistance
+
+A substantial part of this tool was generated with an AI coding assistant (Claude, in GitHub Copilot)
+and reviewed, tested and maintained by the author listed in `package.json`.
+
 ## Status
 
 Work in progress. Specs live in [specs/](specs/); the project rules are in
