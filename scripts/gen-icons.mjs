@@ -49,6 +49,7 @@ const ICONS = {
     search: "<circle cx='7' cy='7' r='4.5'/><path d='M10.4 10.4 14 14'/>",
     undo: "<path d='M3 6.5h6.5a3.5 3.5 0 0 1 0 7H6'/><path d='M5.5 3.5 2.5 6.5l3 3'/>",
     plus: "<path d='M8 3v10M3 8h10'/>",
+    minus: "<path d='M3 8h10'/>",
     upload: "<path d='M8 10V2M4.5 5 8 1.5 11.5 5M2.5 13.5h11'/>",
     pipette: "<path d='M10.5 2.5a1.8 1.8 0 0 1 2.9 2L11 7l1 1-1 1-4-4 1-1 1 1z'/><path d='M7.5 7.5 3 12v1h1l4.5-4.5'/>",
     eraser: "<path d='M9 3l4 4-5.5 5.5H4.5L3 11a1 1 0 0 1 0-1.4z'/><path d='M7 5 11 9M8.5 12.5h5'/>",
@@ -71,6 +72,7 @@ const ICONS = {
     'flip-v': "<path d='M2 8h12'/><path d='M4 6 8 2l4 4zM4 10l4 4 4-4z'/>",
     contrast: "<circle cx='8' cy='8' r='5.5'/><path d='M8 2.5v11a5.5 5.5 0 0 0 0-11z'/>",
     shape: "<path d='M8 2.2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.7l-3.6 1.9.7-4L2.2 6.5l4-.6z'/>",
+    'chevron-down': "<path d='M3.5 6 8 10.5 12.5 6'/>",
 };
 
 const mask = inner => {

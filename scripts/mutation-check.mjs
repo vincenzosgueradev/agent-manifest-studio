@@ -68,6 +68,9 @@ const COVER = {
     'src/app.ts': ['test/ui.flow.test.ts', 'test/ui.edit.test.ts', 'test/ui.editor.test.ts'],
     'src/services/theme.ts': ['test/ui.theme.test.ts'],
     'src/styles.css': ['test/ui.theme.test.ts'],
+    'src/services/image/demo.ts': ['test/image.demo.test.ts'],
+    'src/view/effectGuide.ts': ['test/ui.guide.test.ts'],
+    'src/services/image/sync.ts': ['test/image.sync.test.ts', 'test/ui.sync.test.ts'],
 };
 
 const L = 'src/services/limits.ts';
@@ -476,7 +479,7 @@ const MUTATIONS = [
     ["src/view/imageEditor.ts", "shown.width * s.zoom / 100", "shown.width * s.zoom", "the zoom is not a percentage"],
     ["src/view/imageEditor.ts", "return clampZoom(Math.round(fitScale() * 10) * 10);", "return 100;", "Fit never shows its size"],
     ["src/view/imageEditor.ts", "bg: 'checker', zoom: 'fit' as Zoom,", "bg: 'checker', zoom: 100 as Zoom,", "a new session keeps a zoom"],
-    ["src/view/imageEditor.ts", "$('ie-zoom-value').textContent = s.zoom === 'fit' ? 'Fit' : `${s.zoom}%`;", "$('ie-zoom-value').textContent = 'Fit';", "the zoom value is not shown"],
+    ["src/view/imageEditor.ts", "$('ie-zoom-value').textContent = s.zoom === 'fit' ? 'Fit' : `${zoomPct}%`;", "$('ie-zoom-value').textContent = 'Fit';", "the zoom value is not shown"],
     ["src/view/imageEditor.ts", "label.hidden = !s.showOriginal;", "label.hidden = true;", "the original is shown with no label"],
     ["src/view/imageEditor.ts", "${same ? ' (the same as now)' : ''}", "${''}", "the label never says that the original is the same as now"],
     ["src/view/imageEditor.ts", "now.data.every((v, i) => v === shown.data[i])", "true", "the label says the same as now when it is not"],
@@ -524,6 +527,28 @@ const MUTATIONS = [
     ["src/view/compare.ts","m.replaced.includes('outline')","m.replaced.includes('color')","the outline state follows the colour icon"],
     ["src/view/compare.ts","draw('original', m.originalIcons, m.originalAccent);","draw('original', m.nowIcons, m.nowAccent);","the Original row shows the edited package"],
     ["src/view/compare.ts","e.classList.toggle('is-changed', changed);","","a changed state looks like an unchanged one"],
+
+    // ── demo.ts (feature 012: the fixed sample pictures used only by the effect guides)
+    ["src/services/image/demo.ts", "Math.round(Math.min(width, height) * 0.12)", "Math.round(Math.min(width, height) * 0.08)", "the default margin around the demo glyph is too small"],
+    ["src/services/image/demo.ts", "Math.round(Math.min(innerW, innerH) * 0.28)", "Math.round(Math.min(innerW, innerH) * 0.18)", "the demo glyph's stem is too thin"],
+    ["src/services/image/demo.ts", "lx < bar || ly >= innerH - bar", "lx < bar", "the demo glyph loses its foot (no longer an asymmetric L)"],
+
+    // ── effectGuide.ts (feature 012: the info guide opened next to every toolbox entry)
+    ["src/view/effectGuide.ts", "const run = (ops: Op[]) => (before: Picture): Picture => ops.reduce((p, op) => applyOp(p, op), before);", "const run = (ops: Op[]) => (before: Picture): Picture => before;", "a guide's After picture is the same as Before"],
+    ["src/view/effectGuide.ts", "current = key;\n        render();\n        overlay!.hidden = false;", "render();\n        overlay!.hidden = false;", "a guide opens with the previous one's title"],
+    ["src/view/effectGuide.ts", "overlay!.hidden = false;", "overlay!.hidden = true;", "a guide never actually shows"],
+    ["src/view/effectGuide.ts", "closeBtn.addEventListener('click', () => close());", "", "the guide's Close button does nothing"],
+    ["src/view/effectGuide.ts", "overlay.addEventListener('click', e => { if (e.target === overlay) close(); });", "overlay.addEventListener('click', () => close());", "a click anywhere inside the guide closes it, including the panel"],
+
+    // ── sync.ts (feature 010: keeping the colour icon and the outline icon in step)
+    ["src/services/image/sync.ts", "export const otherSlot = (slot: IconSlot): IconSlot => (slot === 'color' ? 'outline' : 'color');", "export const otherSlot = (slot: IconSlot): IconSlot => slot;", "a slot's suggestion depends on itself, not the other icon"],
+    ["src/services/image/sync.ts", "directVersion: { ...state.directVersion, [slot]: state.directVersion[slot] + 1 }", "directVersion: { ...state.directVersion, [slot]: state.directVersion[slot] }", "a direct edit is never counted"],
+    ["src/services/image/sync.ts", "resolvedAt: { ...state.resolvedAt, [slot]: state.directVersion[otherSlot(slot)] }", "resolvedAt: { ...state.resolvedAt, [slot]: state.directVersion[slot] }", "a suggestion resolves against the wrong slot's counter"],
+    ["src/services/image/sync.ts", "return state.directVersion[otherSlot(slot)] !== state.resolvedAt[slot];", "return state.directVersion[otherSlot(slot)] === state.resolvedAt[slot];", "pending and resolved are swapped"],
+    ["src/services/image/sync.ts", "return s >= 0.2 ? rgb : TEAMS_BLUE;", "return s >= 0.2 ? TEAMS_BLUE : rgb;", "the grey fallback and the accent colour are swapped"],
+    ["src/services/image/sync.ts", "return evaluate(colour, presetOutline(colour)).picture;", "return colour;", "regenerating the outline does nothing"],
+    ["src/services/image/sync.ts", "return fillOn(fit(outline, target, 100), colour);", "return fit(outline, target, 100);", "building the colour icon keeps the shape see-through instead of on a tile"],
+    ["src/services/image/sync.ts", "if (!source.present || !source.png || source.png.kind !== 'ok') return null;", "if (!source.present) return null;", "a suggestion is offered from a PNG the tool cannot read"],
 ];
 
 const only = process.argv[2];
