@@ -88,7 +88,7 @@ describe('the package declares no connection and no API of an environment (Princ
         expect(pkg.features).toBeUndefined();
     });
     it('has no runtime dependency except fflate, pinned', () => {
-        expect(pkg.dependencies).toEqual({ fflate: '0.8.2' });
+        expect(pkg.dependencies).toEqual({ fflate: '0.8.3' });
     });
     it('shows its own version, read from package.json at build time', () => {
         const vite = readFileSync(resolve(process.cwd(), 'vite.config.ts'), 'utf8');

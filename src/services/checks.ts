@@ -71,7 +71,7 @@ function colorIconChecks(out: Check[], icon: IconInfo): void {
     if (icon.png?.kind === 'ok' && sized) {
         const outside = countOutsideSafeArea(icon.png.rgba, icon.png.header.width, icon.png.header.height, COLOR_SAFE_AREA_SIDE);
         out.push(check('color.safe-area', 'Logo stays in the safe area', outside === 0 ? 'pass' : 'warning',
-            outside === 0 ? 'inside the central 120 x 120 pixels' : `${outside} ${outside === 1 ? 'pixel' : 'pixels'} outside the central 120 x 120`,
+            outside === 0 ? 'inside the central 120 x 120 pixels' : `${outside} pixels outside the central 120 x 120`,
             'the logo inside the central 120 x 120 pixels',
             'Assumes the background is transparent or the colour of the top-left pixel: anything else counts as logo. Does not prove how Teams crops or masks the icon.'));
     }
@@ -141,6 +141,20 @@ export const MIN_ICON_CONTRAST = 3;
 const SEE_THROUGH_SHARE = 0.1;
 
 /**
+ * The logo colour of a picture: the visible pixels, averaged by their alpha. `null` when every
+ * pixel is fully transparent (there is no logo to average). Shared with `services/autofix.ts`,
+ * which needs the same colour to pick a contrasting accent colour (specs/011-automatic-check-fixes).
+ */
+export function averageLogoColour(rgba: Uint8Array): { r: number; g: number; b: number } | null {
+    let weight = 0, r = 0, g = 0, b = 0;
+    for (let i = 0; i < rgba.length; i += 4) {
+        const a = rgba[i + 3]!;
+        if (a > 0) { weight += a; r += rgba[i]! * a; g += rgba[i + 1]! * a; b += rgba[i + 2]! * a; }
+    }
+    return weight === 0 ? null : { r: r / weight, g: g / weight, b: b / weight };
+}
+
+/**
  * Whether the logo can be told apart from the accent colour it is laid on. The logo is taken to be the
  * visible pixels, averaged by their alpha; it only applies when enough of the icon is see-through for the
  * accent colour to show (otherwise the icon brings its own background). `null` when it does not apply.
@@ -150,20 +164,17 @@ function contrastCheck(icon: IconInfo, accent: string | null): Check | null {
     const png = icon.png;
     if (!rgb || !png || png.kind !== 'ok') return null;
     const px = png.rgba;
-    let seeThrough = 0, weight = 0, r = 0, g = 0, b = 0;
-    for (let i = 0; i < px.length; i += 4) {
-        const a = px[i + 3]!;
-        if (a < 255) seeThrough++;
-        if (a > 0) { weight += a; r += px[i]! * a; g += px[i + 1]! * a; b += px[i + 2]! * a; }
-    }
+    let seeThrough = 0;
+    for (let i = 3; i < px.length; i += 4) if (px[i]! < 255) seeThrough++;
     const pixels = px.length / 4;
-    if (weight === 0 || seeThrough / pixels < SEE_THROUGH_SHARE) return null;
-    const logo = luminance(r / weight, g / weight, b / weight);
-    const ratio = contrastRatio(logo, luminance(rgb.r, rgb.g, rgb.b));
+    const logo = averageLogoColour(px);
+    if (!logo || seeThrough / pixels < SEE_THROUGH_SHARE) return null;
+    const ratio = contrastRatio(luminance(logo.r, logo.g, logo.b), luminance(rgb.r, rgb.g, rgb.b));
     return check('color.contrast', 'Logo stands out from the accent colour', ratio >= MIN_ICON_CONTRAST ? 'pass' : 'warning',
         `${ratio.toFixed(1)} : 1`, `at least ${MIN_ICON_CONTRAST} : 1 between the logo and the accent colour behind it`,
         'Takes the logo as the average colour of the visible pixels. Does not prove how Teams or Microsoft 365 Copilot draw the tile: a light logo on a light accent colour can nearly disappear.');
 }
+
 
 /** `manifestText` is the manifest as it will be saved; with it the schema row is added. */
 export function runChecks(manifest: ManifestView, icons: IconSet, manifestText?: string): Check[] {
