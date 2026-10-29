@@ -36,6 +36,7 @@ import { initImageEditor } from './view/imageEditor';
 import { onSuffixInput, renderNameEditor, resetNameEditor } from './view/nameEditor';
 import { onExportClick, onVersionBump, renderExport } from './view/exportPanel';
 import { initSteps, showStep } from './view/steps';
+import { plural } from './services/plural';
 
 interface State {
     ctx: EditContext;
@@ -141,7 +142,7 @@ function render(): void {
     if (!state) { showLoaded(null); clearViews(); return; }
     const { ctx } = state;
     const files = ctx.pkg.entries.filter(e => !e.isDirectory).length;
-    showLoaded(ctx.pkg.fileName, `${files} ${files === 1 ? 'file' : 'files'} · ${kb(ctx.pkg.byteLength)} · manifest schema ${ctx.manifest.manifestVersion ?? 'unknown'}`);
+    showLoaded(ctx.pkg.fileName, `${plural(files, 'file', 'files')} · ${kb(ctx.pkg.byteLength)} · manifest schema ${ctx.manifest.manifestVersion ?? 'unknown'}`);
     renderSummary($('summary'), ctx.manifest, ctx.pkg);
 
     const { shown, problem } = currentView(state);

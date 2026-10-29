@@ -7,6 +7,7 @@
 import { SCHEMAS } from '../../schemas';
 import type { Check } from '../../types';
 import { validate, type Problem } from './validate';
+import { plural } from '../plural';
 
 export type { Problem } from './validate';
 
@@ -64,12 +65,11 @@ export function validateManifestText(text: string): SchemaReport {
     return { state: result.problems.length === 0 ? 'valid' : 'invalid', version, url: schemaUrl(version), problems: result.problems, checked: result.checked, notes };
 }
 
-const count = (n: number): string => `${n} ${n === 1 ? 'problem' : 'problems'}`;
 
 /** The one row of the automatic checks that stands for the whole schema: a warning at most, it never stops the save. */
 export function schemaCheck(r: SchemaReport): Check {
     const found = r.state === 'valid' ? `follows v${r.version}, ${r.checked} entries compared`
-        : r.state === 'invalid' ? `${count(r.problems.length)} against v${r.version}`
+        : r.state === 'invalid' ? `${plural(r.problems.length, 'problem', 'problems')} against v${r.version}`
             : 'not validated: the tool has no schema for this manifestVersion';
     return {
         id: 'schema.valid', label: 'Manifest follows its JSON schema', verdict: r.state === 'valid' ? 'pass' : 'warning', found,

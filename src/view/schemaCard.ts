@@ -9,8 +9,8 @@ import { chip, copyButton } from './card';
 import { clear, el } from './dom';
 import { icon, type IconName } from '../icons';
 import { problemsText, type Problem, type SchemaReport } from '../services/schema';
+import { plural } from '../services/plural';
 
-const count = (n: number): string => `${n} ${n === 1 ? 'problem' : 'problems'}`;
 
 /** `developer.websiteUrl` belongs to `developer`, `bots[0].scopes` to `bots`, the root to `(manifest)`. */
 const groupOf = (p: Problem): string => /^[^.[]+/.exec(p.path)?.[0] ?? p.path;
@@ -31,13 +31,13 @@ function problemRow(p: Problem): HTMLElement {
 
 function groupBlock(name: string, items: Problem[]): HTMLElement {
     return el('details', { class: 'sch-group', 'data-group': name, open: true },
-        el('summary', { class: 'sch-summary' }, el('code', { class: 'sch-group-name' }, name), chip(count(items.length), 'warning')),
+        el('summary', { class: 'sch-summary' }, el('code', { class: 'sch-group-name' }, name), chip(plural(items.length, 'problem', 'problems'), 'warning')),
         el('ul', { class: 'sch-list' }, ...items.map(problemRow)));
 }
 
 const HEADLINE: Record<SchemaReport['state'], (r: SchemaReport) => string> = {
     valid: r => `The manifest follows schema v${r.version}`,
-    invalid: r => `${count(r.problems.length)} against schema v${r.version}`,
+    invalid: r => `${plural(r.problems.length, 'problem', 'problems')} against schema v${r.version}`,
     'no-schema': () => 'The manifest was not validated',
 };
 const HERO_ICON: Record<SchemaReport['state'], IconName> = { valid: 'check-circle', invalid: 'alert-triangle', 'no-schema': 'info' };
@@ -47,7 +47,7 @@ export function renderSchema(body: HTMLElement, chipSlot: HTMLElement, r: Schema
     (body.closest('section') as HTMLElement | null)?.removeAttribute('hidden');
     clear(body);
     clear(chipSlot);
-    const chipText = r.state === 'valid' ? `follows v${r.version}` : r.state === 'invalid' ? count(r.problems.length) : 'not validated';
+    const chipText = r.state === 'valid' ? `follows v${r.version}` : r.state === 'invalid' ? plural(r.problems.length, 'problem', 'problems') : 'not validated';
     const badge = chip(chipText, HERO_TONE[r.state]);
     badge.id = 'schema-chip';
     chipSlot.append(badge);

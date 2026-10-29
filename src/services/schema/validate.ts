@@ -5,6 +5,8 @@
  * English, with the path of the value, what was expected, what was found, and the description the schema gives.
  */
 
+import { plural } from '../plural';
+
 export interface Problem {
     /** Dotted path with indexes: `developer.websiteUrl`, `bots[0].scopes[1]`; the root is `(manifest)`. */
     path: string;
@@ -90,7 +92,6 @@ const typeOf = (v: unknown): string => (v === null ? 'null' : Array.isArray(v) ?
 
 const article = (word: string): string => (/^[aeiou]/.test(word) ? 'an' : 'a');
 
-const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 
 function show(value: unknown): string {
     const text = JSON.stringify(value) ?? String(value);

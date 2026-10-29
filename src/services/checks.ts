@@ -15,6 +15,7 @@ import { contrastRatio, luminance } from './image/colour';
 import { parseAccent } from './preview';
 import { countOutsideSafeArea } from './safeArea';
 import { schemaCheck, validateManifestText } from './schema';
+import { plural } from './plural';
 import type { Check, IconInfo, IconSet, ManifestView, NameValue, PngHeader, Verdict } from '../types';
 
 function check(id: string, label: string, verdict: Verdict, found: string, expected: string, notProven: string): Check {
@@ -71,7 +72,7 @@ function colorIconChecks(out: Check[], icon: IconInfo): void {
     if (icon.png?.kind === 'ok' && sized) {
         const outside = countOutsideSafeArea(icon.png.rgba, icon.png.header.width, icon.png.header.height, COLOR_SAFE_AREA_SIDE);
         out.push(check('color.safe-area', 'Logo stays in the safe area', outside === 0 ? 'pass' : 'warning',
-            outside === 0 ? 'inside the central 120 x 120 pixels' : `${outside} pixels outside the central 120 x 120`,
+            outside === 0 ? 'inside the central 120 x 120 pixels' : `${plural(outside, 'pixel', 'pixels')} outside the central 120 x 120`,
             'the logo inside the central 120 x 120 pixels',
             'Assumes the background is transparent or the colour of the top-left pixel: anything else counts as logo. Does not prove how Teams crops or masks the icon.'));
     }

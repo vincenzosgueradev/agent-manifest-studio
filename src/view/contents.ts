@@ -8,6 +8,7 @@ import { chip } from './card';
 import { clear, el } from './dom';
 import { icon, type IconName } from '../icons';
 import type { EditContext, Plan } from '../services/export';
+import { plural } from '../services/plural';
 
 const kb = (bytes: number): string => (bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`);
 
@@ -35,13 +36,12 @@ export function renderContents(body: HTMLElement, ctx: EditContext, plan: Plan):
     const fields = changedFields(plan);
     const manifestChanged = plan.text !== ctx.manifestText;
     const iconPaths = Object.keys(plan.entries);
-    const noun = (n: number): string => `${n} ${n === 1 ? 'file' : 'files'}`;
 
     let note: string;
-    if (!plan.changed) note = `${noun(total)}: nothing changes, the new package is an identical copy.`;
-    else if (iconPaths.length === 0) note = `${noun(total)}: only manifest.json changes, and in it only ${joinList(fields)}.`;
-    else if (!manifestChanged) note = `${noun(total)}: only ${joinList(iconPaths)} ${iconPaths.length === 1 ? 'is' : 'are'} replaced; the manifest is identical.`;
-    else note = `${noun(total)}: manifest.json changes (${joinList(fields)}) and ${joinList(iconPaths)} ${iconPaths.length === 1 ? 'is' : 'are'} replaced.`;
+    if (!plan.changed) note = `${plural(total, 'file', 'files')}: nothing changes, the new package is an identical copy.`;
+    else if (iconPaths.length === 0) note = `${plural(total, 'file', 'files')}: only manifest.json changes, and in it only ${joinList(fields)}.`;
+    else if (!manifestChanged) note = `${plural(total, 'file', 'files')}: only ${joinList(iconPaths)} ${iconPaths.length === 1 ? 'is' : 'are'} replaced; the manifest is identical.`;
+    else note = `${plural(total, 'file', 'files')}: manifest.json changes (${joinList(fields)}) and ${joinList(iconPaths)} ${iconPaths.length === 1 ? 'is' : 'are'} replaced.`;
     body.append(el('p', { class: 'contents-note', id: 'contents-note' }, note));
 
     const rows = files.map(e => {
