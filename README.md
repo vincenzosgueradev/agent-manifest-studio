@@ -22,10 +22,10 @@ a file and never touches an environment.
    PROD), and change the text of the app: names, descriptions, developer name, and the version
    (with a bump helper). **Look**: the accent colour and the colour and outline icons. Each changed field
    is marked and can be reverted.
-4. Look at the preview of the colour icon on the accent colour, at several sizes and with its safe
+4. Look at the preview of the colour icon as it is (on a checkerboard where it is see-through), at several sizes and with its safe
    area, the outline icon on a light and a dark app bar, and the app name.
 5. Read the checks: icon format, size, weight, safe area, name lengths, accent colour. The **Manifest schema**
-   card says whether `manifest.json` follows the JSON schema of its own `manifestVersion` (the tool has the
+   card of the Package step says whether `manifest.json` follows the JSON schema of its own `manifestVersion` (the tool has the
    schemas 1.10 to 1.17 and 1.19 to 1.30) and explains each problem: the entry, what is wrong, what the
    schema expects, what was found and, for a misspelt entry, the one you probably meant. Copy or save the
    report if you want to keep it.
