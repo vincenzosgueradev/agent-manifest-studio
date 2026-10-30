@@ -229,3 +229,5 @@ description: "Task list for feature 001: Manifest Reader, Preview and Name Suffi
 - Never commit real packages; fixtures are generated (Testing Standard 7).
 - A defect found later is reproduced by a failing test before it is fixed, and the test stays.
 - What the tests cannot see (Teams pixels, Teams validation, the native save dialog, the real PPTB theme) is in `quickstart.md` as manual checks.
+
+- [X] T008a Tool icon redrawn as a 96x96 tile (rounded lavender background, line-art agent head between curly braces, one dark stroke); tests in `test/ui.cards.test.ts` ("the logo is an SVG file with a viewBox", "the logo is a self-contained tile"). Manual check: look at it at 24 px (header) and in the Toolbox tools list on both themes.
