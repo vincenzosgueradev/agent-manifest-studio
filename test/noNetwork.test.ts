@@ -84,8 +84,8 @@ describe('the sources contain nothing that writes, calls the network or names an
 
 describe('the package declares no connection and no API of an environment (Principle II)', () => {
     const pkg = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8'));
-    it('has no features block: it needs no connection', () => {
-        expect(pkg.features).toBeUndefined();
+    it('declares features.connections 0: it needs no connection', () => {
+        expect(pkg.features).toEqual({ connections: 0, minAPI: '1.2.7' });
     });
     it('has no runtime dependency except fflate, pinned', () => {
         expect(pkg.dependencies).toEqual({ fflate: '0.8.3' });

@@ -6,6 +6,17 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-31
+
+Changes requested by the marketplace review.
+
+### Fixed
+- `package.json` declares `features` with `connections: 0` and `minAPI: 1.2.7`, so PPTB no longer asks for an environment before the tool opens.
+- The README links to `SECURITY.md`, `CHANGELOG.md`, `LICENSE`, `specs/`, the marketplace standard and the constitution are full GitHub URLs, so they work on the marketplace page.
+
+### Changed
+- The tool icon is a single-colour outline drawn with `currentColor` and no background tile.
+
 ## [0.1.0] - 2026-10-30
 
 First public release. Everything below was written during development; nothing was published before.

@@ -155,12 +155,13 @@ describe('icons', () => {
         expect(logo).toContain("viewBox='0 0 96 96'");
     });
 
-    it('the logo is a self-contained tile: rounded background, one dark stroke colour, two curly braces, no emoji', () => {
+    it('the logo is a single-colour outline: currentColor, no background tile, no fixed colours, two curly braces, no emoji', () => {
         const logo = readFileSync(resolve(process.cwd(), 'src/public/logo.svg'), 'utf8');
-        expect(logo).toMatch(/<rect width='96' height='96' rx='22'/);
-        expect(logo).toContain("stroke='#1f2328'");
-        const braces = logo.match(/<g stroke='#7c6cf0'[^>]*>(.*?)<\/g>/)?.[1] ?? '';
-        expect(braces.match(/<path/g)).toHaveLength(2);
+        expect(logo).toContain("stroke='currentColor'");
+        expect(logo).not.toMatch(/<rect width='96'/);
+        expect(logo).not.toMatch(/#[0-9a-fA-F]{3,8}|url\(#/);
+        expect(logo).not.toMatch(/fill='(?!none)/);
+        expect(logo.match(/<path d='M(?:24|72) 14/g)).toHaveLength(2);
         expect(logo).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
     });
 });

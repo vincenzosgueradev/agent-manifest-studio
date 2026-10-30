@@ -167,7 +167,7 @@ sends no telemetry and keeps nothing between loads.
 Report a bug or ask for a change in the [GitHub Issues](https://github.com/vincenzosgueradev/agent-manifest-studio/issues).
 Give the tool version (shown in the tool), what you did, what you expected and what happened, and attach a
 **generated or anonymised** sample package, never a real one. A vulnerability goes to the private
-reporting described in [SECURITY.md](SECURITY.md), not to a public issue.
+reporting described in [SECURITY.md](https://github.com/vincenzosgueradev/agent-manifest-studio/blob/main/SECURITY.md), not to a public issue.
 
 ## AI Assistance
 
@@ -176,7 +176,13 @@ and was reviewed, tested and is maintained by the author listed in `package.json
 
 ## Updates
 
-Newest first. The full history is in [CHANGELOG.md](CHANGELOG.md). Rules: [docs/marketplace-page-standard.md](docs/marketplace-page-standard.md).
+Newest first. The full history is in [CHANGELOG.md](https://github.com/vincenzosgueradev/agent-manifest-studio/blob/main/CHANGELOG.md). Rules: [docs/marketplace-page-standard.md](https://github.com/vincenzosgueradev/agent-manifest-studio/blob/main/docs/marketplace-page-standard.md).
+
+### 0.1.1 - 2026-10-31
+
+- Fixed the tool asking for an environment connection before it opens: it now declares that it needs none, so it opens straight away.
+- Fixed the links to the security policy, the changelog and the project rules, which did not open from the marketplace page.
+- Changed the tool icon to a single-colour outline that follows the light and dark themes.
 
 ### 0.1.0 - 2026-10-30
 
@@ -190,6 +196,6 @@ Newest first. The full history is in [CHANGELOG.md](CHANGELOG.md). Rules: [docs/
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT, see [LICENSE](https://github.com/vincenzosgueradev/agent-manifest-studio/blob/main/LICENSE).
 
-Specs live in [specs/](specs/); the project rules are in [.specify/memory/constitution.md](.specify/memory/constitution.md).
+Specs live in [specs/](https://github.com/vincenzosgueradev/agent-manifest-studio/blob/main/specs/); the project rules are in [.specify/memory/constitution.md](https://github.com/vincenzosgueradev/agent-manifest-studio/blob/main/.specify/memory/constitution.md).
