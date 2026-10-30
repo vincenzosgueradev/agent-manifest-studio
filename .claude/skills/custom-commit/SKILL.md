@@ -51,7 +51,6 @@ Consider the user input if not empty (scope, type hint, extra context).
 | `image` | PNG decoding/encoding, accent removal, recolouring, resizing, export |
 | `manifest` | Reading and rewriting the Teams app manifest zip |
 | `checks` | Automatic checks on the icon: contrast, size, weight, transparency, safe margins |
-| `headless` | Headless/MCP entry point, if any |
 | `config` | `pptb.config.json`, pptb fields in `package.json`, Vite/TypeScript config |
 | `smoke` | `scripts/` smoke checks |
 | `specs` | `specs/**` (spec-kit artifacts) |

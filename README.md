@@ -1,16 +1,80 @@
 # Agent Manifest Studio
 
-A Power Platform ToolBox tool to **see how the icon and the name of a Copilot Studio agent will look
-before you upload it**, and to move the same Teams app package between environments by changing the
-environment suffix of its name (`[DEV]` to `[UAT]` or `[PROD]`).
+A Power Platform ToolBox tool to **preview, check and edit the Teams app package of a Copilot Studio agent
+before you upload it**: see the icon and the name as Teams shows them, check the manifest against its JSON
+schema, fix the problems with one click, change the text, version, accent colour and icons (with a built-in image
+editor) and save a new package. It works on a file and never touches an environment.
 
-Today the only way to know how an agent icon looks in Teams is to upload it, publish the agent and
-look. This tool replaces that loop with a file and a preview.
+Today the only way to know how an agent icon looks in Teams is to upload it, publish the agent and look, and
+the only way to change the icon, the colour or a name is to start that loop again. This tool replaces the loop
+with a file, a preview and a list of checks.
 
-It works on the **Teams app package** of an agent: the zip that Copilot Studio produces. You can open
-the zip you downloaded from Copilot Studio. The tool works on a file and never touches an environment.
+It works on the **Teams app package** of an agent: the zip that Copilot Studio produces. You can open the zip you
+downloaded from Copilot Studio, or drop it on the panel.
 
-## How to use it
+## Features
+
+**See it before you publish**
+- **Package contents.** Opens the package and shows what is inside: names, descriptions, version, identifiers,
+  accent colour, icons, permissions and valid domains. Anything missing or not recognised is named.
+- **Preview where Teams shows it.** The colour icon as it is (on a chequerboard where it is see-through), at
+  several sizes and with its safe area; the outline icon on a light and a dark app bar; the app name.
+- **Before and after.** A band at the top of the Look step shows the original and the new icons and accent colour
+  side by side, with Unchanged or Changed under each.
+
+**Check it**
+- **Automatic checks** on the icon format, size and weight, the safe area, the lengths of the names and the
+  accent colour. Each check says what it found.
+- **Manifest schema check.** Checks `manifest.json` against the JSON schema of its own `manifestVersion` (1.10 to
+  1.17 and 1.19 to 1.30, bundled with the tool) and explains each problem: the entry, what is wrong, what the schema
+  expects, what was found and, for a misspelt entry, the one you probably meant. Copy or save the report.
+- **One-click fixes.** The problems that have a safe fix get a Fix it button, a Fix everything button and an Undo.
+
+**Change it**
+- **Names, descriptions, developer data and version.** Edit every safe text field, with its limit shown as you type.
+  A suffix helper adds or replaces `DEV`, `TEST`, `UAT`, `STAGING`, `PREPROD` or `PROD`, and a bump helper raises the
+  version. Each changed field is marked and can be reverted alone or all together.
+- **Accent colour.** Type it, choose it with the colour picker, or **take it from a pixel of the colour icon**: a
+  popup shows the picture, you click a pixel (or use the arrow keys) and press Use this colour. It opens from the
+  Look step and from the image editor.
+- **Icons.** Replace the colour icon and the outline icon with a picture of your own, or edit the one you have.
+- **Two-way sync.** After you change the colour icon, the tool offers to regenerate the outline icon to match;
+  after you change the outline icon, it offers to build a colour icon from its shape. Nothing is replaced until you
+  accept, and Revert brings it back.
+
+**The image editor**
+- **Background:** remove a flat background (from the edges or everywhere, with tolerance, softness and a matte) or
+  fill the see-through parts.
+- **Geometry:** trim the empty margin, crop (by dragging or by numbers), make square, fit the logo inside the safe
+  area, rotate and flip.
+- **Colour:** give every visible pixel one colour, or change hue, saturation, brightness and contrast.
+- **Outline maker:** turn the picture into the white silhouette the outline icon needs.
+- **Quick buttons:** a Teams-ready colour icon, or an outline icon from the colour icon, in one click.
+- **History:** every change is a step you can undo, redo, edit and remove; Show original compares with the picture
+  you started from.
+- **See while you work:** zoom, rulers, a grid with the 120 x 120 safe area, a checker, white or black background,
+  and the result as Teams-sized tiles (96, 48 and 32 pixels).
+- **Guides:** an info button next to each tool explains what it does, with a before and after example, and lists its
+  parameters.
+- **Files:** open another image (PNG always; JPEG, WebP, GIF and SVG when the window can read them) and save the
+  result as a PNG.
+
+**Save it**
+- **A package that differs only in what you edited.** A Changes table lists every changed value and every file
+  before you press Save, and after building the package the tool checks that nothing else changed. The original
+  file is never overwritten.
+- **A report of the checks,** as a JSON file, when you ask.
+
+**Private and local**
+- Works on a file, never on an environment; nothing is sent anywhere; follows the light or dark theme of Power
+  Platform ToolBox.
+
+## Installation
+
+Install **Agent Manifest Studio** from the Power Platform ToolBox marketplace. It needs **no connection**:
+it works on a file you choose.
+
+## Usage
 
 1. **Open a file**: the Teams app package you downloaded from Copilot Studio (a zip), or drop it on
    the panel.
@@ -18,7 +82,8 @@ the zip you downloaded from Copilot Studio. The tool works on a file and never t
    permissions and valid domains. Anything missing or not recognised is named.
 3. **Details**: type a new suffix or press one of the usual names (DEV, TEST, UAT, STAGING, PREPROD,
    PROD), and change the text of the app: names, descriptions, developer name, and the version
-   (with a bump helper). **Look**: the accent colour and the colour and outline icons. Each changed field
+   (with a bump helper). **Look**: the accent colour (typed, chosen with the colour picker, or taken from a
+   pixel of the colour icon) and the colour and outline icons. Each changed field
    is marked and can be reverted.
 4. Look at the preview of the colour icon as it is (on a checkerboard where it is see-through), at several sizes and with its safe
    area, the outline icon on a light and a dark app bar, and the app name.
@@ -31,8 +96,7 @@ the zip you downloaded from Copilot Studio. The tool works on a file and never t
    background (from the edges or everywhere, with tolerance, softness and a matte), trims, crops (by
    dragging or by numbers), fits the logo inside the safe area, resizes, rotates and flips, recolours
    (solid colour, hue, saturation, brightness, contrast, invert, grayscale, threshold), makes a white
-   silhouette for the outline icon, picks colours from the picture with an eyedropper and suggests the
-   accent colour. One click gives a Teams-ready colour icon or an outline icon from the colour icon.
+   silhouette for the outline icon and takes the accent colour from a pixel of the picture. One click gives a Teams-ready colour icon or an outline icon from the colour icon.
    Every change is a step in a list you can undo, redo, edit and remove, and you see the result as
    Teams-style tiles next to it.
 7. Save the new package: you see every changed value and every file before you press the button.
@@ -74,15 +138,32 @@ the zip you downloaded from Copilot Studio. The tool works on a file and never t
   its bytes, so the tool works on the file you choose. The new package is saved as a file, not uploaded.
 - The identity of the app (`id`), the manifest version, the bots and agents the package declares and
   every entry the tool does not edit are shown and kept, never edited. Language files are not edited.
-- Choosing a glyph from a library, comparing several agents and an MCP entry point are planned for
-  later releases.
+
+## Privacy and network use
+
+Packages and images are processed on your computer and never leave it. The tool makes no network call,
+sends no telemetry and keeps nothing between loads.
+
+## Support and bugs
+
+Report a bug or ask for a change in the [GitHub Issues](https://github.com/vincenzosgueradev/agent-manifest-studio/issues).
+Give the tool version (shown in the tool), what you did, what you expected and what happened, and attach a
+**generated or anonymised** sample package, never a real one. A vulnerability goes to the private
+reporting described in [SECURITY.md](SECURITY.md), not to a public issue.
 
 ## AI Assistance
 
-A substantial part of this tool was generated with an AI coding assistant (Claude, in GitHub Copilot)
-and reviewed, tested and maintained by the author listed in `package.json`.
+A substantial part of this tool was written with an AI coding assistant (Claude Code)
+and was reviewed, tested and is maintained by the author listed in `package.json`.
 
-## Status
+## Updates
 
-Work in progress. Specs live in [specs/](specs/); the project rules are in
-[.specify/memory/constitution.md](.specify/memory/constitution.md).
+Newest first. The full history is in [CHANGELOG.md](CHANGELOG.md). Rules: [docs/marketplace-page-standard.md](docs/marketplace-page-standard.md).
+
+No release is published yet.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
+
+Specs live in [specs/](specs/); the project rules are in [.specify/memory/constitution.md](.specify/memory/constitution.md).

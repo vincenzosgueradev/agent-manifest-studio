@@ -84,7 +84,6 @@ time and restores the files from memory.
 | Path safety | Reject `..` segments, leading `/`, backslashes, drive letters, empty names and duplicates; directory entries (trailing `/`) are kept | silent fix-up of paths |
 | File access | Open: `toolboxAPI.fileSystem.selectPath` + `readBinary`, with `<input type=file>` and drag-and-drop as the fallback when the API is absent. Save: `fileSystem.saveFile` (one dialog; the platform has no silent binary write) | terminal tricks (blocked by the platform) |
 | Network | None. No `connections` feature in `package.json`; a test fails if `fetch`, `XMLHttpRequest` or `WebSocket` is called | |
-| Headless / MCP | Not in this release (constitution Principle VI, VIII) | |
 
 ## 6. Observations that the plan relies on and that stay UNVERIFIED
 

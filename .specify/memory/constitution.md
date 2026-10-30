@@ -1,7 +1,16 @@
 <!--
 SYNC IMPACT REPORT (remove before commit)
 ==========================================
-Version change: 1.7.0 → 1.7.1 (PATCH: the tool is independent; references to another tool are removed).
+Version change: 1.9.1 → 1.9.2 (PATCH: Principle VI no longer announces MCP/headless support, and Principle V's example no longer
+names it; no future capability is named anywhere.)
+Earlier: 1.9.0 → 1.9.1 (PATCH: Principle VIII no longer names glyph choice, comparing several agents and an MCP
+entry point as future releases; nothing is promised before it exists.)
+Earlier: 1.8.0 → 1.9.0 (MINOR: Principle VI gains the Promotion Standard: every feature is explained in full
+in every public description (GitHub About and topics, npm `description` and `keywords`, README and its Updates section),
+and all of them are checked and updated in the same piece of work as the change, never "later".)
+Earlier: 1.7.1 → 1.8.0 (MINOR: Principle VI points to the shared marketplace page standard
+(docs/marketplace-page-standard.md): page structure, versioning, bug handling, Updates format).
+Earlier: 1.7.0 → 1.7.1 (PATCH: the tool is independent; references to another tool are removed).
 Earlier: 1.6.1 → 1.7.0 (MINOR: Principle V links the official Marketplace Policy and AI-Assisted
 Development Policy pages and requires both to be checked line by line before every submission, and gains
 the rules learned from an earlier marketplace review: icon must not be a company/product logo,
@@ -127,8 +136,7 @@ Both MUST be checked line by line before `/custom-ampush` or `/custom-publish` i
 - **Theme:** the tool follows the light/dark theme of PPTB and is readable in both.
 - **README matches the published package, not an aspiration.** Every flow diagram, "Structure"
   section and feature description MUST describe only what ships in the files listed under `files`
-  in `package.json`. A planned or removed capability (an import step, a headless/MCP mode, a
-  deploy script) is either shipped and published, or described as not available / done outside the
+  in `package.json`. A planned or removed capability (an import step, a deploy script) is either shipped and published, or described as not available / done outside the
   tool — never left as a dangling mention.
 - **README:** contains a section titled exactly `What this tool changes`, accurate and
   complete, including "nothing is read from or written to any environment" while Principle II holds.
@@ -154,8 +162,6 @@ Both MUST be checked line by line before `/custom-ampush` or `/custom-publish` i
 
 The tool is a public signal of expertise: described by the gap it fills, discoverable by the
 Copilot Studio community, published on the PPTB marketplace with verified status as the target.
-MCP/headless support is added where the output is structured data an agent could use (for
-example the report of the automatic checks); it is not required for the first release.
 
 **The GitHub description is part of the product.** The repository
 `vincenzosgueradev/agent-manifest-studio` has a description (About) and topics that say what the
@@ -174,14 +180,50 @@ tool does. They MUST stay true:
 - A release is not proposed (`/custom-ampush`, `/custom-publish`) while the description is known to
   be out of date.
 
-Live text, 2026-10-28 (update this block with every change of the description):
+**The marketplace page, bug handling and updates follow one shared standard**,
+[docs/marketplace-page-standard.md](../../docs/marketplace-page-standard.md), the same for every PPTB tool
+(page blocks and order, versioning, how a bug is reported, reproduced, fixed and closed, and the format of the
+**Updates** list). A release is not proposed while the
+page, the README and the newest changelog entry disagree, and every fixed bug is reproduced by a test first
+and named in the changelog by its symptom and issue number.
 
-> Power Platform ToolBox tool to preview, check and edit the app manifest of a Copilot Studio agent
-> for Microsoft 365 and Microsoft Teams: names, descriptions, version, accent colour and icons, with
-> a built-in image editor. Works on the package file; nothing is sent anywhere.
+**Promotion Standard: every feature is explained, everywhere, and the explanations are never stale.** The tool
+is promoted by what it can do, so a capability that is not written down in public does not exist for the person
+choosing a tool. These public texts are one set and MUST say the same thing:
+
+1. the GitHub description (About) and topics (above);
+2. the npm `description` and `keywords` in `package.json` (shown on the package page and in search);
+3. the first paragraph and the **Features** list of `README.md`;
+4. the marketplace page, which is the README itself (its Updates section included, see
+   `docs/marketplace-page-standard.md`), and the newest `CHANGELOG.md` entry.
+
+Rules:
+
+- **Every feature is explained**, not only listed: what the user can do, the problem it removes (the manual step it
+  replaces), where to find it in the tool, and what it does *not* do (Principle III). The README **Features** list
+  covers every capability of the tool, one entry each, in words a person who has never seen the tool understands.
+- **Same piece of work.** A change that adds, removes or alters what the user can do updates all four places in the
+  same piece of work as the code, the spec and the tests. "Done" includes the descriptions; a feature whose
+  capability is missing from the README or the npm description is not done.
+- **npm and GitHub are checked together.** The npm `description` (one sentence, at most 350 characters) says what the
+  tool does and for whom, never carries an outdated capability (for example a removed one), and `keywords` name what
+  the tool works with and does. Claude proposes the new GitHub and npm text with each change; it applies the GitHub
+  edit only when the user says so, and the npm text changes with the commit, and is published only by
+  `/custom-publish` (Principle VI above, Claude never publishes).
+- **Claims match behaviour** (Principle V): promotion never says more than the tool does and never names a
+  Microsoft product as the tool's own brand.
+- **A release is not proposed** (`/custom-ampush`, `/custom-publish`) while one of the four places is known to be out of
+  date. `/custom-ampush` reports it as NOT READY.
+
+Live text, applied and checked online on 2026-10-30 (update this block with every change of the description):
+
+> Preview, check and edit the Teams app package of a Copilot Studio agent before you upload it: see the
+> icon and name as Teams shows them, validate the manifest against its JSON schema, fix problems with one
+> click, and edit text, version, accent colour and icons with a built-in image editor. Works on a file,
+> never on an environment.
 
 Topics: `agent-manifest`, `copilot-studio`, `microsoft-365`, `microsoft-teams`,
-`power-platform-toolbox`, `pptb-tool`.
+`power-platform-toolbox`, `pptb-tool`, `json-schema`, `image-editor`, `manifest-validation`.
 
 ### VII. Enterprise UI and Navigation
 
@@ -202,8 +244,7 @@ package (manifest zip), read the manifest, preview icon and name in the real pla
 automatic checks, change the name suffix and export the package. Editing the other manifest fields
 and replacing the icons arrived in the third feature: the package that is saved differs from the one
 that was opened only in the values the user edited, and the tool proves it before it saves.
-Choosing a glyph and a colour, comparing several agents side by side and an MCP entry point each
-arrive in their own release. No feature blocks another's release.
+No feature blocks another's release, and a capability is promised in public only once it exists.
 
 ## Tool Standards
 
@@ -398,4 +439,4 @@ reviewed against all eight Core Principles before the build starts; a feature th
 Principle II (local and read-only) or Principle V (marketplace policy) MUST NOT proceed without
 an amendment.
 
-**Version**: 1.7.1 | **Ratified**: 2026-10-26 | **Last Amended**: 2026-10-29
+**Version**: 1.9.2 | **Ratified**: 2026-10-26 | **Last Amended**: 2026-10-30

@@ -3,10 +3,17 @@
 The project rules are in `.specify/memory/constitution.md`; read it before changing anything. This
 tool works on a Teams app package file and never on an environment (Principle II).
 
-## GitHub description
+## GitHub and npm descriptions (Promotion Standard, Principle VI)
 
-When a change touches what the tool does for the user, check the GitHub description and topics (Principle VI)
-and propose the new text with the change. Apply it to GitHub only when the user says so.
+When a change touches what the tool does for the user, update in the same piece of work: the README (first
+paragraph and the Features list, every capability explained), the npm `description` and `keywords` in
+`package.json` and the Updates section of the README (the marketplace page); and propose the new GitHub description and topics. Apply the GitHub
+text only when the user says so. A feature whose capability is missing from these texts is not done.
+
+## Marketplace page
+
+Page, bug handling, versioning and the Updates list follow `docs/marketplace-page-standard.md` (shared by
+every tool); the page of this tool is its `README.md`. Update both with the changelog at release time.
 
 ## Skills
 

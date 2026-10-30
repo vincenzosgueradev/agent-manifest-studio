@@ -9,7 +9,7 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 ### Fixed
 - Image editor: the crop box drawn by dragging now lines up with the picture (it was 1 pixel off because of the border of the stage); the crop sliders stop where the rectangle would leave the picture; the "may look blurred" warning also appears when a crop or a step makes the picture smaller than the area it has to fill, and is shown next to any other note.
 - The safe-area check says "1 pixel outside" (not "1 pixels") when exactly one pixel is outside.
-- The tool icon is redrawn: a small coloured agent between curly braces (a JSON hint), readable on both the light and the dark theme.
+- The tool icon is redrawn as a tile: a rounded soft-lavender square with a line-art agent head between two violet curly braces (a JSON hint), one dark stroke, an amber antenna and turquoise eyes. It carries its own background, so it reads on both the light and the dark theme.
 - The "Short and full name differ" warning now carries an "Advice" badge and a "Why only a warning" line that says Teams accepts identical names, saving is not blocked, and there is no automatic fix.
 
 - The suggestion to regenerate the outline icon (or rebuild the colour icon) is now a clear notice with a heading, a plain sentence saying what will be replaced and that Revert restores it, and an accent bar.
@@ -25,6 +25,8 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 
 ### Added
 
+- **Accent colour from the picture**: a popup where you click a pixel of the colour icon and press Use this colour to set the accent colour to it (arrow keys and Enter work too). It opens from the Look step (a From the picture button beside the accent colour, and an Accent from picture button on the colour icon card) and from the image editor (it then shows the picture with the steps so far, and adds no step). A see-through pixel is refused with the reason, because the accent colour is one solid colour.
+- Documentation: a shared marketplace page standard (`docs/marketplace-page-standard.md`: README structure, repository files, versioning, bug handling, format of the Updates list), a README restructured to it (Features, Installation, Privacy, Support and bugs, Updates, License), `SECURITY.md`, issue templates, and constitution 1.8.0 pointing to them.
 - **Two-way icon sync**: editing or replacing the colour icon offers, on the outline icon card, to regenerate the
   outline icon to match its new shape (the same computation as the editor's "Outline from this icon"); editing or
   replacing the outline icon offers, on the colour icon card, to build a colour icon from its shape, enlarged onto
@@ -94,6 +96,7 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
   API, and a test fails if any source names one, calls the network or writes.
 
 ### Changed
+- The npm description and keywords and the README (first paragraph and a Features list that explains every capability, grouped by what you do with it) now describe the whole tool, including the checks, the schema validation, the image editor and the accent colour from the picture. The line that announced later releases is removed.
 
 - **Edit**: the developer links (Website, Privacy statement, Terms of use) are no longer editable; they are still shown in the Package step and kept exactly as they are in the saved package.
 - **Look page**: *Logo without background* is gone. *Make background transparent* stays.

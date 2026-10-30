@@ -2,7 +2,7 @@
     "name": "@vincenzosgueradev/pptb-agent-manifest-studio",
     "version": "0.1.0",
     "displayName": "Agent Manifest Studio",
-    "description": "See how the icon and name of a Copilot Studio agent will look before you upload it. Reads the Teams app package, previews it, checks it and saves a copy with a new environment suffix. Works on a file, never on an environment.",
+    "description": "Preview, check and edit the Teams app package of a Copilot Studio agent before you upload it: see the icon and name as Teams shows them, validate the manifest against its JSON schema, fix problems with one click, and edit text, version, accent colour and icons with a built-in image editor. Works on a file, never on an environment.",
     "type": "module",
     "main": "index.html",
     "icon": "dist/logo.svg",
@@ -42,7 +42,8 @@
     },
     "contributors": [
         {
-            "name": "Vincenzo Sguera"
+            "name": "Vincenzo Sguera",
+            "url": "https://github.com/vincenzosgueradev"
         }
     ],
     "keywords": [
@@ -51,8 +52,14 @@
         "copilot-studio",
         "agents",
         "teams",
+        "microsoft-365",
         "manifest",
+        "app-package",
+        "json-schema",
+        "validation",
         "icon",
+        "image-editor",
+        "accent-colour",
         "preview"
     ],
     "configurations": {

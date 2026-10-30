@@ -355,7 +355,7 @@ exactly the suffix.
   untested; the thresholds can change when a test settles it.
 - Editing the icon image, the accent colour or any other entry, comparing several packages side by
   side, reading from an environment, and any machine-readable entry point for agents are out of
-  scope for this release and are planned for later ones.
+  scope for this release.
 - This feature requires an amendment to Principle VIII of the constitution (patch version 1.0.1) so
   that the first release is: read the manifest, show the preview of icon and name, change the name
   suffix, export. Glyph and accent colour editing move to the next release.
