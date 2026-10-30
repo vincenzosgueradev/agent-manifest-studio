@@ -41,6 +41,8 @@ export interface EditorHandlers {
     onRevertAll: () => void;
     /** Opens the image editor on the icon of a slot: the one way to change an icon. */
     onIconEdit: (slot: IconSlot) => void;
+    /** Opens the popup that takes the accent colour from a pixel of the colour icon (feature 013). */
+    onAccentFromPicture: () => void;
     /** Accepts the sync suggestion on a slot's card (feature 010). */
     onSyncAccept: (slot: IconSlot) => void;
     /** "Not now": hides the suggestion until its source changes again. */
@@ -83,6 +85,9 @@ function fieldRow(def: FieldDef): HTMLElement {
         const picker = el('input', { id: `ed-pick-${def.path}`, class: 'color-input', type: 'color', 'aria-label': `Pick the ${def.label.toLowerCase()} with a colour picker`, title: 'Pick a colour' });
         picker.addEventListener('input', () => handlers?.onField(def.path, picker.value));
         control.push(picker);
+        const fromPicture = el('button', { id: 'ed-accent-from-picture', type: 'button', class: 'btn btn--secondary btn--sm' }, icon('pipette', 'icon--xs'), 'From the picture');
+        fromPicture.addEventListener('click', () => handlers?.onAccentFromPicture());
+        control.push(fromPicture);
     }
     if (def.kind === 'version') {
         for (const part of ['patch', 'minor'] as const) {
@@ -113,6 +118,10 @@ function iconCard(slot: IconSlot): HTMLElement {
     const edit = el('button', { id: `ed-img-edit-${slot}`, type: 'button', class: 'btn btn--primary btn--sm' }, icon('wand', 'icon--xs'), 'Edit image');
     edit.addEventListener('click', () => handlers?.onIconEdit(slot));
 
+    // Only the colour icon: the outline icon is white, so it has no colour to take.
+    const accentBtn = el('button', { id: 'ed-img-accent-color', type: 'button', class: 'btn btn--secondary btn--sm' }, icon('pipette', 'icon--xs'), 'Accent from picture');
+    accentBtn.addEventListener('click', () => handlers?.onAccentFromPicture());
+
     const syncAccept = el('button', { id: `ed-sync-accept-${slot}`, type: 'button', class: 'btn btn--primary btn--sm' });
     syncAccept.addEventListener('click', () => handlers?.onSyncAccept(slot));
     const syncDismiss = el('button', { id: `ed-sync-dismiss-${slot}`, type: 'button', class: 'btn btn--secondary btn--sm' }, 'Not now');
@@ -130,7 +139,7 @@ function iconCard(slot: IconSlot): HTMLElement {
             el('div', { class: 'ed-img-info' },
                 el('p', { class: 'ed-img-facts', id: `ed-img-facts-${slot}` }),
                 el('p', { class: 'ed-img-caption', id: `ed-img-caption-${slot}`, hidden: true }),
-                el('div', { class: 'ed-img-actions' }, edit),
+                el('div', { class: 'ed-img-actions' }, edit, slot === 'color' ? accentBtn : null),
                 syncRow,
                 el('p', { class: 'export-reason ed-error', id: `ed-img-msg-${slot}`, role: 'alert', hidden: true }))));
 }
@@ -288,6 +297,16 @@ export function renderEditor(root: HTMLElement, m: EditorModel): void {
         const busy = m.imageEditorSlot !== null && m.imageEditorSlot !== slot;
         b.disabled = busy;
         b.title = busy ? 'Another image editor is open: apply or cancel it first.' : `Edit the ${SLOT_LABEL[slot]} as an image`;
+    }
+    const colourInfo = m.shown.icons.color;
+    const readable = colourInfo.present && colourInfo.png?.kind === 'ok';
+    for (const id of ['ed-accent-from-picture', 'ed-img-accent-color']) {
+        const b = $(id) as HTMLButtonElement;
+        const busy = m.imageEditorSlot !== null;
+        b.disabled = !readable || busy;
+        b.title = !readable ? 'The colour icon is missing or is not a PNG the tool can read.'
+            : busy ? 'The image editor is open: use its own button, or apply or cancel it first.'
+            : 'Choose the accent colour by clicking a pixel of the colour icon';
     }
     const nothing = !any && Object.keys(m.edits.fields).length === 0;
     ($('ed-revert-all') as HTMLButtonElement).disabled = nothing;

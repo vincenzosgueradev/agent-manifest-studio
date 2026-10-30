@@ -71,6 +71,8 @@ const COVER = {
     'src/services/image/demo.ts': ['test/image.demo.test.ts'],
     'src/view/effectGuide.ts': ['test/ui.guide.test.ts'],
     'src/services/image/sync.ts': ['test/image.sync.test.ts', 'test/ui.sync.test.ts'],
+    'src/services/image/pixel.ts': ['test/pixel.colourAt.test.ts', 'test/ui.accentPicker.test.ts'],
+    'src/view/accentPicker.ts': ['test/ui.accentPicker.test.ts'],
 };
 
 const L = 'src/services/limits.ts';
@@ -400,7 +402,7 @@ const MUTATIONS = [
     ["src/services/image/accept.ts", "if (isEmptyPicture(picture))", "if (false)", "an empty result is accepted"],
     ["src/services/image/accept.ts", "return p.width === p.height ? resizePicture(p, target, target) : fit(p, target, 100);", "return resizePicture(p, target, target);", "a rectangle is stretched"],
     ["src/view/imageEditor.ts", "if (w > 1 || h > 1) {", "if (true) {", "a click without a drag adds a crop"],
-    ["src/view/imageEditor.ts", "if (fx < 0 || fy < 0 || fx >= 1 || fy >= 1) return null;", "if (fx < 0 || fy < 0 || fx > 1 || fy > 1) return null;", "a point on the far edge is inside"],
+    ["src/services/image/pixel.ts", "if (fx < 0 || fy < 0 || fx >= 1 || fy >= 1) return null;", "if (fx < 0 || fy < 0 || fx > 1 || fy > 1) return null;", "a point on the far edge is inside"],
     ["src/view/imageEditor.ts", "speed.hidden = took <= SLOW_MS;", "speed.hidden = true;", "a slow change is not reported"],
     ["src/view/imageEditor.ts", "($('ie-undo') as HTMLButtonElement).disabled = s.pipeline.undoStack.length === 0;", "($('ie-undo') as HTMLButtonElement).disabled = false;", "Undo is on with nothing to undo"],
     ["src/view/imageEditor.ts", "if (!r.ok) { state.message = r.message; render(); return; }\n        const slot = state.slot;", "const slot = state.slot;", "Apply ignores a refusal"],
@@ -552,6 +554,21 @@ const MUTATIONS = [
     ["src/services/image/pipeline.ts", "op.kind === 'fit' && Math.max(steps[i]!.width, steps[i]!.height) < op.target * op.share / 100", "false", "a small picture that reaches Fit is not called enlarged"],
     ["src/services/image/pipeline.ts", "return last.width < target || last.height < target ? last : null;", "return null;", "a final picture smaller than the icon is not called enlarged"],
 
+    ["src/services/image/pixel.ts", "if (a === 0) return", "if (a === 255) return", "a see-through pixel is accepted"],
+    ["src/services/image/pixel.ts", "if (a < 255) return", "if (a < 254) return", "an alpha of 254 is accepted as a colour"],
+    ["src/services/image/pixel.ts", "const i = (y * p.width + x) * 4;", "const i = (x * p.height + y) * 4;", "x and y are swapped"],
+    ["src/services/image/pixel.ts", "x >= p.width || y >= p.height", "x > p.width || y > p.height", "one point past the edge is allowed"],
+    ["src/services/image/pixel.ts", "!Number.isInteger(x) || ", "", "a fractional point is allowed"],
+    ["src/view/accentPicker.ts", "chosen = { x, y, hex: r.hex };", "chosen = chosen ?? { x, y, hex: r.hex };", "a second click does not change the choice"],
+    ["src/view/accentPicker.ts", "($('ap-use') as HTMLButtonElement).disabled = false;", "($('ap-use') as HTMLButtonElement).disabled = true;", "a good pixel leaves Use this colour off"],
+    ["src/view/accentPicker.ts", "const big = e.shiftKey ? 10 : 1;", "const big = 1;", "Shift does not move by ten"],
+    ["src/view/accentPicker.ts", "const hex = chosen.hex;", "const hex = chosen.hex; deps.onUse(hex); return;", "the popup stays open after Use this colour"],
+    ["src/view/accentPicker.ts", "if (e.target === o) close();", "close();", "a click inside the panel closes the popup"],
+    ["src/view/accentPicker.ts", "e.stopPropagation(); close();", "close();", "Escape in the popup also closes the image editor behind it"],
+    ["src/view/accentPicker.ts", "($('ap-use') as HTMLButtonElement).disabled = true;", "($('ap-use') as HTMLButtonElement).disabled = false;", "a new opening starts with Use this colour on"],
+    ["src/view/imageEditor.ts", "accentBtn.disabled = s.slot !== 'color';", "accentBtn.disabled = false;", "the outline icon can give an accent colour"],
+    ["src/view/editor.ts", "b.disabled = !readable || busy;", "b.disabled = !readable;", "the Look buttons stay on while the image editor is open"],
+    ["src/app.ts", "if (p) accentPicker.open(p, 'the colour icon');", "if (p) accentPicker.open(p, 'the outline icon');", "the popup is opened on the wrong picture"],
 ];
 
 const only = process.argv[2];

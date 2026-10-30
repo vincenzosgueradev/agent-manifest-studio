@@ -9,6 +9,7 @@ import { parseCssColor } from './preview';
 import { resetScroll } from './steps';
 import { icon, type IconName } from '../icons';
 import { cornerColour, fromHex, toHex } from '../services/image/colour';
+import { toPixel } from '../services/image/pixel';
 import { acceptResult, toTarget } from '../services/image/accept';
 import { importImage, windowDecoder } from '../services/image/import';
 import { encodePng } from '../services/image/pngWrite';
@@ -40,6 +41,8 @@ export interface ImageEditorDeps {
     hasHostFiles: () => boolean;
     /** Saves the PNG with the host's dialog; the path, or `null` when cancelled. */
     savePng: (name: string, bytes: Uint8Array) => Promise<string | null>;
+    /** Opens the accent colour popup on the picture the editor shows (feature 013); `from` says whose it is. */
+    pickAccent: (picture: Picture, from: string) => void;
     /** The editor opened or closed (the icon cards disable their button while one is open). */
     onOpenChange: (slot: IconSlot | null) => void;
 }
@@ -105,13 +108,7 @@ export const SLOW_MS = 200;
 
 const SLOT_TITLE: Record<IconSlot, string> = { color: 'colour icon', outline: 'outline icon' };
 
-/** The pixel of a picture under a pointer: the rectangle is the canvas on screen. */
-export function toPixel(clientX: number, clientY: number, rect: { left: number; top: number; width: number; height: number }, width: number, height: number): { x: number; y: number } | null {
-    if (rect.width <= 0 || rect.height <= 0) return null;
-    const fx = (clientX - rect.left) / rect.width, fy = (clientY - rect.top) / rect.height;
-    if (fx < 0 || fy < 0 || fx >= 1 || fy >= 1) return null;
-    return { x: Math.min(width - 1, Math.floor(fx * width)), y: Math.min(height - 1, Math.floor(fy * height)) };
-}
+export { toPixel };
 
 // ── The fields of each operation ──────────────────────────────────────────────
 
@@ -329,6 +326,7 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
             gridBtn,
             precisionGroup,
             originalBtn,
+            button('ie-accent', 'Accent from picture', 'pipette', () => { if (state) deps.pickAccent(picture2(), 'the picture as it is now'); }, 'btn btn--secondary btn--sm', 'Choose the accent colour by clicking a pixel of this picture. It changes the accent colour only, not the picture.'),
             el('span', { class: 'ie-spacer' }),
             button('ie-undo', 'Undo', 'undo', () => setPipeline(undo(state!.pipeline))),
             button('ie-redo', 'Redo', 'redo', () => setPipeline(redo(state!.pipeline))),
@@ -782,6 +780,9 @@ export function initImageEditor(deps: ImageEditorDeps): ImageEditor {
         ($('ie-undo') as HTMLButtonElement).disabled = s.pipeline.undoStack.length === 0;
         ($('ie-redo') as HTMLButtonElement).disabled = s.pipeline.redoStack.length === 0;
         $('ie-original').setAttribute('aria-pressed', String(s.showOriginal));
+        const accentBtn = $('ie-accent') as HTMLButtonElement;
+        accentBtn.disabled = s.slot !== 'color';   // the outline icon is white: it has no colour to take
+        if (s.slot !== 'color') accentBtn.title = 'Only the colour icon gives an accent colour.';
         $('ie-grid').setAttribute('aria-pressed', String(s.grid));
         for (const p of ['low', 'medium', 'high'] as const) {
             const b = $(`ie-grid-${p}`) as HTMLButtonElement;

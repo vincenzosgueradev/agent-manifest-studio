@@ -100,7 +100,7 @@ describe('the layout of the workspace (FR-001, FR-002, FR-016)', () => {
         const ui = await loaded();
         await ui.click('ed-img-edit-color');
         const ids = [...document.querySelectorAll('#ie-card .ie-bar-top button')].map(b => b.id);
-        expect(ids).toEqual(['ie-open-other', 'ie-save-png', 'ie-bg-checker', 'ie-bg-white', 'ie-bg-black', 'ie-grid', 'ie-grid-low', 'ie-grid-medium', 'ie-grid-high', 'ie-original', 'ie-undo', 'ie-redo', 'ie-revert-all', 'ie-cancel', 'ie-apply']);
+        expect(ids).toEqual(['ie-open-other', 'ie-save-png', 'ie-bg-checker', 'ie-bg-white', 'ie-bg-black', 'ie-grid', 'ie-grid-low', 'ie-grid-medium', 'ie-grid-high', 'ie-original', 'ie-accent', 'ie-undo', 'ie-redo', 'ie-revert-all', 'ie-cancel', 'ie-apply']);
     });
 
     it('the status bar has the size and the pointer position (FR-019); the zoom floats over the canvas', async () => {

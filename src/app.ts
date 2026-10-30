@@ -33,6 +33,7 @@ import { renderContents } from './view/contents';
 import { renderChanges } from './view/changes';
 import { initEditor, renderEditor, resetEditor } from './view/editor';
 import { initImageEditor } from './view/imageEditor';
+import { initAccentPicker } from './view/accentPicker';
 import { onSuffixInput, renderNameEditor, resetNameEditor } from './view/nameEditor';
 import { onExportClick, onVersionBump, renderExport } from './view/exportPanel';
 import { initSteps, showStep } from './view/steps';
@@ -425,6 +426,12 @@ function iconBytes(slot: IconSlot): Uint8Array | null {
     return shown.entries[path] ?? ctx.pkg.entries.find(e => e.path === path && !e.isDirectory)?.data ?? null;
 }
 
+/** The popup that takes the accent colour from a pixel of a picture (feature 013): the one place that writes the field. */
+const accentPicker = initAccentPicker({
+    onUse: hex => edit(e => ({ ...e, fields: { ...e.fields, accentColor: hex } })),
+    current: () => (state ? currentView(state).shown.manifest.accentColor : null),
+});
+
 const imageEditor = initImageEditor({
     root: () => document.getElementById('image-editor-root'),
     currentIcon: iconBytes,
@@ -434,6 +441,7 @@ const imageEditor = initImageEditor({
     },
     accent: () => (state ? currentView(state).shown.manifest.accentColor : null),
     onApply: (slot, bytes) => acceptIcon(slot, bytes),
+    pickAccent: (picture, from) => accentPicker.open(picture, from),
     pickImage,
     hasHostFiles,
     savePng: savePngFile,
@@ -459,6 +467,10 @@ initEditor({
         edit(() => EMPTY);
     },
     onIconEdit: slot => imageEditor.open(slot),
+    onAccentFromPicture: () => {
+        const p = sourcePicture('color');
+        if (p) accentPicker.open(p, 'the colour icon');
+    },
     onSyncAccept: slot => acceptSyncSuggestion(slot),
     onSyncDismiss: slot => dismissSyncSuggestion(slot),
 });

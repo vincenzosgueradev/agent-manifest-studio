@@ -128,13 +128,13 @@ describe('the icon cards have one action, Edit image (2026-10-29)', () => {
     // excludes the sync-suggestion row (feature 010): present but hidden on every card, documented in its own contract.
     const buttons = (id: string): string[] => [...document.querySelectorAll(`#${id} button`)].map(b => b.id).filter(bid => !bid.startsWith('ed-sync-'));
 
-    it('each card has the Edit image button and no other control', async () => {
+    it('each card has the Edit image button and no other control (the colour icon card also has Accent from picture, feature 013)', async () => {
         await loaded();
-        expect(buttons('ed-img-color')).toEqual(['ed-img-edit-color']);
+        expect(buttons('ed-img-color')).toEqual(['ed-img-edit-color', 'ed-img-accent-color']);
         expect(buttons('ed-img-outline')).toEqual(['ed-img-edit-outline']);
         for (const id of ['ed-img-color', 'ed-img-outline']) {
             expect(document.querySelectorAll(`#${id} input, #${id} select, #${id} textarea`), id).toHaveLength(0);
-            expect(document.querySelector(`#${id} button`)!.textContent!.trim(), id).toBe('Edit image');
+            expect(document.querySelector(`#${id} button`)!.textContent!.trim(), id).toBe('Edit image');   // the first, and the main one
         }
     });
 

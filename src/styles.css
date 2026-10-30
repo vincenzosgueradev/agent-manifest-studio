@@ -1027,3 +1027,19 @@ body {
 .sch-hint { margin: var(--sp-1) 0 0; display: flex; gap: var(--sp-2); align-items: center; color: var(--color-primary); font-size: var(--fs-sm); }
 .sch-proof { margin: var(--sp-4) 0 0; color: var(--color-text-muted); font-size: var(--fs-sm); }
 .ed-img-actions { margin-top: var(--sp-2); }
+
+/* The accent colour popup (feature 013): over the whole window, above the image editor. */
+.ap-overlay { position: fixed; z-index: 100; }
+.ap-panel { align-items: stretch; }
+.ap-stage { position: relative; align-self: center; line-height: 0; }
+.ap-canvas { display: block; image-rendering: pixelated; cursor: crosshair; border: 1px solid var(--color-border); border-radius: var(--radius); }
+.ap-canvas:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.ap-mark {
+    position: absolute; width: 14px; height: 14px; transform: translate(-50%, -50%); pointer-events: none;
+    border: 2px solid var(--color-surface); border-radius: 50%; box-shadow: 0 0 0 2px var(--color-text-strong);
+}
+.ap-mark[hidden] { display: none; }
+.ap-readout { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); }
+.ap-item { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--color-text-muted); font-size: var(--fs-sm); }
+.ap-item strong { color: var(--color-text-strong); font-variant-numeric: tabular-nums; }
+.ap-actions { display: flex; justify-content: flex-end; gap: var(--sp-2); }

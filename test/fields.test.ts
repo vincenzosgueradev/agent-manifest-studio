@@ -90,6 +90,12 @@ describe('valid domains (Teams rules, research.md section 2)', () => {
     for (const v of ok) it(`accepts ${v}`, () => expect(validateDomain(v, [])).toBeNull());
     for (const [v, why] of bad) it(`refuses ${JSON.stringify(v.slice(0, 20))} (${why})`, () => expect(validateDomain(v, [])).not.toBeNull());
 
+    it('names the reason: a scheme, a path and a port each get their own message', () => {
+        expect(validateDomain('https://x.com', [])).toContain('without https://');
+        expect(validateDomain('x.com/path', [])).toContain('without a path');
+        expect(validateDomain('x.com:8080', [])).toContain('without a port');
+    });
+
     it('refuses a duplicate whatever its case', () => {
         expect(validateDomain('Contoso.com', ['contoso.com'])).not.toBeNull();
         expect(validateDomain('other.com', ['contoso.com'])).toBeNull();
