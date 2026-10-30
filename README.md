@@ -12,6 +12,8 @@ with a file, a preview and a list of checks.
 It works on the **Teams app package** of an agent: the zip that Copilot Studio produces. You can open the zip you
 downloaded from Copilot Studio, or drop it on the panel.
 
+![Package step with a sample agent loaded: the contents of the package and the manifest schema check](https://raw.githubusercontent.com/vincenzosgueradev/agent-manifest-studio/main/docs/screenshots/dark/01-package.png)
+
 ## Features
 
 **See it before you publish**
@@ -85,13 +87,23 @@ it works on a file you choose.
    (with a bump helper). **Look**: the accent colour (typed, chosen with the colour picker, or taken from a
    pixel of the colour icon) and the colour and outline icons. Each changed field
    is marked and can be reverted.
+
+   ![Details step: suffix buttons, changed fields marked and Revert](https://raw.githubusercontent.com/vincenzosgueradev/agent-manifest-studio/main/docs/screenshots/dark/02-details.png)
+
+   ![Look step: the original and the new icons side by side, and the accent colour with From the picture](https://raw.githubusercontent.com/vincenzosgueradev/agent-manifest-studio/main/docs/screenshots/dark/03-look.png)
+
+   ![Accent colour from the picture: click a pixel of the colour icon and press Use this colour](https://raw.githubusercontent.com/vincenzosgueradev/agent-manifest-studio/main/docs/screenshots/dark/08-accent-from-picture.png)
 4. Look at the preview of the colour icon as it is (on a checkerboard where it is see-through), at several sizes and with its safe
    area, the outline icon on a light and a dark app bar, and the app name.
+
+   ![Preview of the colour icon at 192, 96, 48 and 32 pixels with the safe area](https://raw.githubusercontent.com/vincenzosgueradev/agent-manifest-studio/main/docs/screenshots/dark/09-preview.png)
 5. Read the checks: icon format, size, weight, safe area, name lengths, accent colour. The **Manifest schema**
    card of the Package step says whether `manifest.json` follows the JSON schema of its own `manifestVersion` (the tool has the
    schemas 1.10 to 1.17 and 1.19 to 1.30) and explains each problem: the entry, what is wrong, what the
    schema expects, what was found and, for a misspelt entry, the one you probably meant. Copy or save the
    report if you want to keep it.
+
+   ![Checks step with the counters, Fix everything and a failed check with Fix it](https://raw.githubusercontent.com/vincenzosgueradev/agent-manifest-studio/main/docs/screenshots/dark/04-checks.png)
 6. Do not have the right image? Press **Edit image** on an icon: the **image editor** removes a
    background (from the edges or everywhere, with tolerance, softness and a matte), trims, crops (by
    dragging or by numbers), fits the logo inside the safe area, resizes, rotates and flips, recolours
@@ -99,7 +111,13 @@ it works on a file you choose.
    silhouette for the outline icon and takes the accent colour from a pixel of the picture. One click gives a Teams-ready colour icon or an outline icon from the colour icon.
    Every change is a step in a list you can undo, redo, edit and remove, and you see the result as
    Teams-style tiles next to it.
+
+   ![Image editor after the Teams-ready colour icon: toolbox, rulers, history and Teams-size tiles](https://raw.githubusercontent.com/vincenzosgueradev/agent-manifest-studio/main/docs/screenshots/dark/05-image-editor.png)
+
+   ![Guide of Remove background with a before and after picture and its parameters](https://raw.githubusercontent.com/vincenzosgueradev/agent-manifest-studio/main/docs/screenshots/dark/06-effect-guide.png)
 7. Save the new package: you see every changed value and every file before you press the button.
+
+   ![Save step: what changes in the new package and what stays identical](https://raw.githubusercontent.com/vincenzosgueradev/agent-manifest-studio/main/docs/screenshots/dark/07-changes-save.png)
 
 ## What this tool changes
 
@@ -160,7 +178,15 @@ and was reviewed, tested and is maintained by the author listed in `package.json
 
 Newest first. The full history is in [CHANGELOG.md](CHANGELOG.md). Rules: [docs/marketplace-page-standard.md](docs/marketplace-page-standard.md).
 
-No release is published yet.
+### 0.1.0 - 2026-10-30
+
+- Added the preview of the colour icon, the outline icon and the app name of a Copilot Studio agent's Teams app package, with the safe area and a light and a dark app bar.
+- Added the automatic checks (icon format, size, weight, safe area, names, accent colour) and the check of `manifest.json` against the JSON schema of its own `manifestVersion`, with a Fix it button, Fix everything and Undo for the problems that have a safe fix.
+- Added the editing of names, descriptions, developer data, version and accent colour, with the suffix buttons (`DEV`, `TEST`, `UAT`, `STAGING`, `PREPROD`, `PROD`) and a version bump helper.
+- Added the image editor for both icons: remove or fill a background, trim, crop, make square, fit, rotate, flip, recolour, outline maker, quick buttons, history with undo and redo, guides for every tool.
+- Added the accent colour taken from a pixel of the colour icon, from the Look step and from the image editor.
+- Added the offer to regenerate the outline icon after the colour icon changes, and the other way round.
+- Added the saving of a new package that differs from the original only in what you edited, with a Changes table, and a report of the checks as a JSON file.
 
 ## License
 

@@ -145,7 +145,7 @@ problems to "all pass" (except what is out of the tool's reach) in at most two c
 ## Phase 7: Polish & Cross-Cutting Concerns
 
 - [~] T028 Run `npx tsc --noEmit`, `npm run build` and `npm test`; fix any fallout before proceeding (CLAUDE.md Testing Standard). Done so far: `tsc --noEmit`, `npm run build`, and the two new/changed test files (`test/autofix.test.ts`, `test/ui.checks.test.ts`) run clean; the full `npm test` is deferred to when every feature in flight is done, per the user's own instruction.
-- [ ] T029 Run `npm run test:mutation`; for every surviving mutation, add the missing test rather than editing `src/` while it runs (CLAUDE.md Testing Standard). Deferred alongside T028's full suite.
+- [x] T029 Run `npm run test:mutation`; for every surviving mutation, add the missing test rather than editing `src/` while it runs (CLAUDE.md Testing Standard). Deferred alongside T028's full suite. Complete `npm run test:mutation` run 2026-10-30: 456 of 456 mutations killed.
 - [ ] T030 [P] Walk through all 6 scenarios in `specs/011-automatic-check-fixes/quickstart.md` by hand; record the Teams-rendering manual check and its result in that file (Principle III, Honest Preview).
 - [x] T031 Re-check the GitHub description/topics against Principle VI now that the feature exists; propose updated text only if it no longer matches, and apply it only when the user says so. Checked 2026-10-29: the live description already says "preview, check and edit" and the topics are unchanged; one-click fixing is the tool performing that same "edit", not a new target or kind of input/output (research.md §7). No change proposed.
 - [X] T032 [P] Add the feature's entry to `CHANGELOG.md`.

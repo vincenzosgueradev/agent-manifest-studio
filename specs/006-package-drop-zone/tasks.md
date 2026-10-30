@@ -4,7 +4,7 @@
 - [X] T002 `index.html`: zone with title, hint, overlay
 - [X] T003 `styles.css`: zone, overlay, hover and `is-over`
 - [X] T004 `loader.ts`: counter, `checkDropped`, window guard, click on zone
-- [ ] T005 Mutation entries (added, targeted run kills every mutant); the complete `npm run test:mutation` is still to run
+- [x] T005 Mutation entries (added, targeted run kills every mutant); the complete `npm run test:mutation` is still to run Complete `npm run test:mutation` run 2026-10-30: 456 of 456 mutations killed.
 - [X] T006 CHANGELOG, gates (`tsc`, `build`, `test`, `test:full`)
 - [ ] T007 Manual checks recorded in quickstart
 

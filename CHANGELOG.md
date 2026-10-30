@@ -6,6 +6,10 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-30
+
+First public release. Everything below was written during development; nothing was published before.
+
 ### Fixed
 - Image editor: the crop box drawn by dragging now lines up with the picture (it was 1 pixel off because of the border of the stage); the crop sliders stop where the rectangle would leave the picture; the "may look blurred" warning also appears when a crop or a step makes the picture smaller than the area it has to fill, and is shown next to any other note.
 - The safe-area check says "1 pixel outside" (not "1 pixels") when exactly one pixel is outside.

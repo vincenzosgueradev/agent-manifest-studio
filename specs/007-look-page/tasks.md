@@ -8,7 +8,7 @@
 - [X] T006 `app.ts`: `buildPresets`, apply any preset, remove `onIconBorderless`
 - [X] T007 `styles.css`: band, gallery, action rows
 - [X] T008 Update the tests of feature 005 that name the removed button or the three fixed suggestions
-- [ ] T009 Mutation entries (added, targeted runs kill every mutant); the complete `npm run test:mutation` is still to run
+- [x] T009 Mutation entries (added, targeted runs kill every mutant); the complete `npm run test:mutation` is still to run Complete `npm run test:mutation` run 2026-10-30: 456 of 456 mutations killed.
 - [X] T010 CHANGELOG; gates (`tsc`, `build`, `test`, `test:full`)
 - [ ] T011 Manual checks recorded in quickstart
 

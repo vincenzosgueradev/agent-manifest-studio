@@ -10,7 +10,7 @@
 - [X] T008 `checks.ts`, `export.ts`, `fixes.ts`, `report.ts` (FR-005, FR-007, FR-008)
 - [X] T009 `view/schemaCard.ts`, `index.html`, `styles.css`, `app.ts` (FR-006)
 - [X] T010 Fix `fixes.ts` `color.contrast`, which names the button removed by feature 007
-- [ ] T011 Mutation entries (added; the targeted run for `schema` kills all 44, after two tests were added for the survivors); the complete `npm run test:mutation` is still to run
+- [x] T011 Mutation entries (added; the targeted run for `schema` kills all 44, after two tests were added for the survivors); the complete `npm run test:mutation` is still to run Complete `npm run test:mutation` run 2026-10-30: 456 of 456 mutations killed.
 - [X] T012 Constitution 1.6.0 (Verified Facts, Tool Standard), README line, CHANGELOG
 - [ ] T013 Gates (`tsc`, `build`, `test`, `test:full`) and manual checks recorded
 
