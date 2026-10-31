@@ -3,6 +3,12 @@
 The project rules are in `.specify/memory/constitution.md`; read it before changing anything. This
 tool works on a Teams app package file and never on an environment (Principle II).
 
+## Independence (always)
+
+This tool never mentions, links or compares itself with any other tool of the author (no tool names, no "see also",
+no examples taken from another tool) in code, README, docs, specs, tests or commit messages. If a rule or text
+would need to name another tool, leave it out.
+
 ## GitHub and npm descriptions (Promotion Standard, Principle VI)
 
 When a change touches what the tool does for the user, update in the same piece of work: the README (first
