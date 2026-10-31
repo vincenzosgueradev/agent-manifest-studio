@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const read = (f: string) => readFileSync(resolve(process.cwd(), f), 'utf8');
@@ -27,5 +27,16 @@ describe('marketplace review rules', () => {
         const updates = read('README.md').split(/^## Updates/m)[1] ?? '';
         const first = updates.match(/^### (\S+) - (\d{4}-\d{2}-\d{2})/m);
         expect(first?.[1]).toBe(pkg.version);
+    });
+
+    it('the icon path is relative to the dist folder, not prefixed with it (PPTB would look in dist/dist)', () => {
+        const pkg = JSON.parse(read('package.json'));
+        expect(pkg.icon).not.toMatch(/^(\.\/|\/|dist\/)/);
+        expect(pkg.icon).toMatch(/\.svg$/);
+    });
+
+    it('the icon file is shipped at that path inside dist (Vite copies src/public into dist)', () => {
+        const pkg = JSON.parse(read('package.json'));
+        expect(existsSync(resolve(process.cwd(), 'src/public', pkg.icon))).toBe(true);
     });
 });

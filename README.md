@@ -178,6 +178,10 @@ and was reviewed, tested and is maintained by the author listed in `package.json
 
 Newest first. The full history is in [CHANGELOG.md](https://github.com/vincenzosgueradev/agent-manifest-studio/blob/main/CHANGELOG.md). Rules: [docs/marketplace-page-standard.md](https://github.com/vincenzosgueradev/agent-manifest-studio/blob/main/docs/marketplace-page-standard.md).
 
+### 0.1.2 - 2026-10-31
+
+- Fixed the tool icon not showing in the marketplace and in the sidebar: the path to the icon was written in a way PPTB could not find, so it showed its stand-in picture instead.
+
 ### 0.1.1 - 2026-10-31
 
 - Fixed the tool asking for an environment connection before it opens: it now declares that it needs none, so it opens straight away.

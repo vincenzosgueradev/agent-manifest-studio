@@ -6,6 +6,11 @@ All notable changes to Agent Manifest Studio are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-31
+
+### Fixed
+- The tool icon showed PPTB's stand-in picture (a cardboard box) in the marketplace listing: `icon` in `package.json` was `dist/logo.svg`, but PPTB reads it relative to the `dist` folder and looked for `dist/dist/logo.svg`. It is now `logo.svg`, and a test checks the form and that the file is shipped.
+
 ## [0.1.1] - 2026-10-31
 
 Changes requested by the marketplace review.
